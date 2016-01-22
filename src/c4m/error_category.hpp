@@ -31,6 +31,9 @@ namespace c4m
                 #include "error_tags.hpp"
                 #undef C4M_ERROR_TAG
             }
+
+            assert(0 && "Invalid error code received!");
+            return "";
         }
 
         /// @return A reference to the error category

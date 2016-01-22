@@ -69,15 +69,50 @@ void write_to_file(std::fstream& file, c4m::annex_b_nalu value)
 
 void write_capture(const char* filename)
 {
-    c4m::linux::camera camera;
-    camera.open("/dev/video0");
+    // {
+    // auto fd = c4m::linux::open("/dev/video1");
+    // std::error_code error;
+    // v4l2_format format = c4m::linux::read_format(fd,error);
+    // std::cout << c4m::linux::v4l2_pixel_format_to_string(
+    //     format.fmt.pix.pixelformat) << std::endl;
+
+
+    // }
+    {
+        c4m::linux::camera camera;
+        camera.open("/dev/video1");
+        std::cout << camera.pixelformat() << std::endl;
+        std::cout << "Requesting resolution: " << std::endl;
+        camera.request_resolution(400,500);
+        std::cout << "w = " << camera.width() << " h = "
+                  << camera.height() << std::endl;
+
+        camera.start_streaming();
+
+        uint32_t max_buffer_size = camera.max_buffer_size();
+        std::cout << max_buffer_size << std::endl;
+
+        std::vector<uint8_t> buffer(max_buffer_size);
+
+    }
+    std::cout << "=============" << std::endl;
+
+        {
+        c4m::linux::camera camera;
+        camera.open("/dev/video1");
+        std::cout << camera.pixelformat() << std::endl;
+    }
+
+        return;
 
     std::fstream capture_file(filename, std::ios::out |
                               std::ios::binary | std::ios::trunc);
 
     auto fd = c4m::linux::open("/dev/video1");
 
-    v4l2_capability capability = {0};
+    v4l2_capability capability;
+    memset(&capability, 0, sizeof(capability));
+
     c4m::linux::read_capability(fd, &capability);
 
     assert(c4m::linux::is_a_video_capture_device(capability));
@@ -178,6 +213,8 @@ void write_capture(const char* filename)
 
 int main(int argc, char* argv[])
 {
+    (void) argc;
+    (void) argv;
 
     try
     {

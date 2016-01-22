@@ -64,7 +64,7 @@ namespace linux
             const auto& fd = Super::file_descriptor();
             assert(fd);
 
-            m_capability = {0};
+            memset(&m_capability, 0, sizeof(m_capability));
             c4m::linux::read_capability(fd, &m_capability, error);
         }
 
@@ -185,32 +185,39 @@ namespace linux
 
             error = c4m::error::does_not_support_h264_codec;
 
-            // Super::set_fourcc("H264", error);
+        }
+    };
 
-            // if (error)
-            //     return;
+    template<class Super>
+    class set_h264_format_layer : public Super
+    {
+    public:
 
-            // // Check that we actually changed to H264
-            // if (Super::fourcc() != "H264")
-            //     error = c4m::error::format_is_not_h264;
+        void open(const char* device, std::error_code& error)
+        {
+            assert(device);
+            assert(!error);
+
+            Super::open(device, error);
+
+            if (error)
+                return;
+
+            Super::request_pixelformat("H264", error);
+
+            if (error)
+                return;
+
+            if (Super::pixelformat() != "H264")
+                error = c4m::error::format_is_not_h264;
         }
 
-        // void request_format(uint32_t width, uint32_t height,
-        //                     std::error_code& error)
-        // {
-        //     assert(width > 0);
-        //     assert(height > 0);
-        //     assert(!error);
 
-        //     Super::request_format(width, height, error);
-
-        //     if (error)
-        //         return;
-
-        //     // Check that we actually changed to H264
-        //     if (Super::fourcc() != "H264")
-        //         error = c4m::error::format_is_not_h264;
-        // }
+        /// We don't want anybody to override our decision here so lets
+        /// delete the possiblity to call request_pixelformat(...) from
+        /// outside the stack
+        void request_pixelformat(const std::string& fourcc,
+                                 std::error_code& error) = delete;
     };
 
     template<class Super>
@@ -220,6 +227,9 @@ namespace linux
 
         void open(const char* device, std::error_code& error)
         {
+            assert(device);
+            assert(!error);
+
             Super::open(device, error);
 
             if (error)
@@ -234,8 +244,26 @@ namespace linux
         void request_resolution(uint32_t width, uint32_t height,
                                 std::error_code& error)
         {
+            assert(width > 0);
+            assert(height > 0);
+            assert(!error);
+
             m_format.fmt.pix.width = width;
             m_format.fmt.pix.height = height;
+
+            const auto& fd = Super::file_descriptor();
+            assert(fd);
+
+            c4m::linux::set_format(fd, &m_format, error);
+        }
+
+        void request_pixelformat(const std::string& fourcc,
+                                 std::error_code& error)
+        {
+            assert(fourcc.size() == 4);
+            assert(!error);
+
+            m_format.fmt.pix.pixelformat = string_to_v4l2_pixel_format(fourcc);
 
             const auto& fd = Super::file_descriptor();
             assert(fd);
@@ -253,26 +281,125 @@ namespace linux
             return m_format.fmt.pix.height;
         }
 
-        std::string fourcc() const
+        std::string pixelformat() const
         {
             return v4l2_pixel_format_to_string(m_format.fmt.pix.pixelformat);
-        }
-
-    protected:
-
-        void set_fourcc(const std::string& fourcc, std::error_code& error)
-        {
-            m_format.fmt.pix.pixelformat = string_to_v4l2_pixel_format(fourcc);
-
-            const auto& fd = Super::file_descriptor();
-            assert(fd);
-
-            c4m::linux::set_format(fd, &m_format, error);
         }
 
     private:
 
         v4l2_format m_format;
+    };
+
+    template<class Super>
+    class start_streaming_layer : public Super
+    {
+    public:
+
+        start_streaming_layer() //: m_initial_timestamp(0)
+        { }
+
+        void start_streaming(std::error_code& error)
+        {
+            assert(!error);
+
+            const auto& fd = Super::file_descriptor();
+            assert(fd);
+
+            // We ask for 3 buffers would be nice to make this a parameters
+            // at some point
+            uint32_t buffer_count =
+                c4m::linux::request_memory_map_buffers(fd, 3, error);
+
+            if (error)
+                return;
+
+            // Driver may be out of memory:
+            // https://linuxtv.org/downloads/v4l-dvb-apis/vidioc-reqbufs.html
+            if (buffer_count == 0)
+            {
+                error = c4m::error::unable_to_allocate_buffers;
+                return;
+            }
+
+            m_buffers =
+                c4m::linux::memory_map_buffers(fd, buffer_count, error);
+
+            if (error)
+                return;
+
+            assert(m_buffers.size() > 0);
+            assert(m_buffers.size() == buffer_count);
+
+            c4m::linux::enqueue_buffers(fd, buffer_count, error);
+
+            if (error)
+                return;
+
+            c4m::linux::start_streaming(fd, error);
+
+        }
+
+        uint32_t max_buffer_size() const
+        {
+            assert(m_buffers.size() > 0);
+            uint32_t max_size = m_buffers[0].size();
+            assert(max_size > 0);
+
+            // A bit of paranoia
+            for(const auto& b : m_buffers)
+            {
+                assert(b);
+                assert(b.size() == max_size);
+            }
+
+            return max_size;
+        }
+
+        uint64_t timestamp_to_micro_seconds(const v4l2_buffer& buffer)
+        {
+
+            auto clock_type = buffer.flags & V4L2_BUF_FLAG_TIMESTAMP_MASK;
+            assert(clock_type == V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC);
+
+            uint64_t time = (buffer.timestamp.tv_sec * 1000000) +
+                buffer.timestamp.tv_usec;
+
+            // @todo if clock type is V4L2_BUF_FLAG_TIMESTAMP_UNKNOWN
+            // we can do the timestamp ourselves with some chrono or such
+
+            return time;
+        }
+
+        // void fill_buffer(uint8_t* data, std::error_code& error)
+        // {
+        //     assert(data);
+
+        //     const auto& fd = Super::file_descriptor();
+        //     assert(fd);
+
+        //     auto buffer_info = c4m::linux::dequeue_buffer(fd, error);
+
+        //     if (error)
+        //         return;
+
+        //     uint32_t index = buffer_info.index;
+
+        //     m_bytesused = buffer_info.bytesused;
+        //     m_timestamp = timestamp_to_micro_seconds(buffer_info);
+
+        //     assert(index < buffers.size());
+
+        //     const auto& b = buffers[index];
+
+        // }
+
+
+
+    private:
+
+        std::vector<memory_map_buffer> m_buffers;
+
     };
 
 
@@ -283,23 +410,48 @@ namespace linux
 
         void open(const char* device)
         {
+            assert(device);
+
             std::error_code error;
             Super::open(device, error);
 
             throw_if_error(error);
         }
+
+        void request_resolution(uint32_t width, uint32_t height)
+        {
+            assert(width > 0);
+            assert(height > 0);
+
+            std::error_code error;
+            Super::request_resolution(width, height, error);
+
+            throw_if_error(error);
+
+        }
+
+        void start_streaming()
+        {
+            std::error_code error;
+            Super::start_streaming(error);
+
+            throw_if_error(error);
+        }
+
     };
 
     using camera =
         throw_if_error_layer<
+        start_streaming_layer<
+        set_h264_format_layer<
         check_supports_h264_format_layer<
         check_has_streaming_io_ioctl_layer<
         check_video_capture_capability_layer<
-        request_format_layer<
+            request_format_layer<
         enumerate_formats_layer<
         read_capability_layer<
         open_layer<
-        final_layer>>>>>>>>;
+            final_layer>>>>>>>>>>;
 
     // template<class Super>
     // class read_frames

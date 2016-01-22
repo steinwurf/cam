@@ -35,12 +35,15 @@ namespace linux
     {
         assert(fd);
 
-        v4l2_format format = {0};
+        v4l2_format format;
+        memset(&format, 0, sizeof(format));
 
         // For single-planar APO
         format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
         retry_ioctl(fd, VIDIOC_G_FMT, &format, error);
+
+        return format;
     }
 
     /// Calls read_format(...) with and error_code and throws and exception
@@ -58,6 +61,7 @@ namespace linux
 
         std::error_code error;
         auto format = read_format(fd, error);
+
         throw_if_error(error);
         return format;
     }

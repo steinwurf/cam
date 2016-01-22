@@ -36,7 +36,8 @@ private:
 
         auto fd = c4m::linux::open("/dev/video1");
 
-        v4l2_capability capability = {0};
+        v4l2_capability capability;
+        memset(&capability, 0, sizeof(capability));
         c4m::linux::read_capability(fd, &capability);
 
         assert(c4m::linux::is_a_video_capture_device(capability));
@@ -130,6 +131,9 @@ private:
 
 int main(int argc, char* argv[])
 {
+    (void) argc;
+    (void) argv;
+
     try
     {
         ba::io_service io_service;

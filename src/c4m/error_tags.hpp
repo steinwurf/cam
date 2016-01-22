@@ -19,3 +19,7 @@ C4M_ERROR_TAG(does_not_support_h264_codec,
 
 C4M_ERROR_TAG(format_is_not_h264,
               "The device format is currently not H264")
+
+C4M_ERROR_TAG(unable_to_allocate_buffers,
+              "Unable to allocate memory mapped buffers - device may be "
+              "out of memory")

@@ -31,7 +31,7 @@ namespace linux
     ///        // Something went wrong
     ///    }
     ///
-    inline void retry_ioctl(const scoped_file_descriptor& fd, int request,
+    inline void retry_ioctl(const scoped_file_descriptor& fd, uint64_t request,
                             void *arg, std::error_code& error)
     {
         assert(fd);
@@ -52,7 +52,7 @@ namespace linux
     ///
     ///    c4m::linux::retry_ioctl(fd, some_request, &some_data);
     ///
-    inline void retry_ioctl(const scoped_file_descriptor& fd, int request,
+    inline void retry_ioctl(const scoped_file_descriptor& fd, uint64_t request,
                             void *arg)
     {
         assert(fd);

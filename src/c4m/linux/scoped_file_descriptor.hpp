@@ -56,6 +56,7 @@ namespace linux
         {
             m_file_descriptor = other.m_file_descriptor;
             other.m_file_descriptor = -1;
+            return *this;
         }
 
         /// Destructor which will ensure that an owned file descriptor
@@ -77,7 +78,8 @@ namespace linux
             return m_file_descriptor;
         }
 
-        /// @return True if a valid file descriptor is contained otherwise false.
+        /// @return True if a valid file descriptor is contained otherwise
+        ///         false.
         explicit operator bool() const
         {
             return m_file_descriptor != -1;
@@ -89,7 +91,9 @@ namespace linux
         /// have two scoped_file_descriptors owning the same file
         /// descriptor.
         scoped_file_descriptor(const scoped_file_descriptor&) = delete;
-        scoped_file_descriptor& operator=(const scoped_file_descriptor&) = delete;
+
+        scoped_file_descriptor& operator=(
+            const scoped_file_descriptor&) = delete;
 
     private:
 

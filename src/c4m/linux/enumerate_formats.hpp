@@ -36,7 +36,8 @@ namespace linux
         assert(fd);
 
         std::vector<v4l2_fmtdesc> formats;
-        v4l2_fmtdesc format = {0};
+        v4l2_fmtdesc format;
+        memset(&format, 0, sizeof(format));
         format.type = type;
 
         std::error_code query_error;

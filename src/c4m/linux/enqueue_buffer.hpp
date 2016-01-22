@@ -34,7 +34,8 @@ namespace linux
     {
         assert(fd);
 
-        struct v4l2_buffer buffer = {0};
+        v4l2_buffer buffer;
+        memset(&buffer, 0, sizeof(buffer));
 
         buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buffer.memory = V4L2_MEMORY_MMAP;

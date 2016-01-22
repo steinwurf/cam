@@ -36,9 +36,10 @@ namespace linux
     {
         assert(fd);
         assert(requested_buffers > 0);
-        assert(error);
+        assert(!error);
 
-        struct v4l2_requestbuffers request = {0};
+        v4l2_requestbuffers request;
+        memset(&request, 0, sizeof(request));
 
         request.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         request.memory = V4L2_MEMORY_MMAP;
