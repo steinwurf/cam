@@ -16,16 +16,34 @@ namespace c4m
 {
 namespace linux
 {
+    /// Responsible for ensuring that we have memory mapped the buffers
+    /// needed such that data can be exchanged between user-space and the
+    /// driver.
     template<class Super>
     class memory_map_layer : public Super
     {
     public:
 
-        bool is_memory_map_complete() const
+        void start_streaming(std::error_code& error)
         {
-            return m_buffers.size() > 0;
+            assert(!error);
+            assert(m_buffers.size() == 0);
+
+            memory_map_buffers(error);
         }
 
+        void stop_streaming(std::error_code& error)
+        {
+            assert(!error);
+
+            // Reset the buffers struct
+            m_buffers.resize(0);
+        }
+
+        /// Maps the buffers in the driver to user-space. If the mapping
+        /// fails an eror is set.
+        ///
+        /// @param error The error_code will be set in case of a failure.
         void memory_map_buffers(std::error_code& error)
         {
             assert(!error);
@@ -88,11 +106,26 @@ namespace linux
                 }
             }
 
-            m_buffers = buffers;
+            // We wait with updating the state of the layer until we know
+            // we are in a good state
+            m_buffers = std::move(buffers);
+        }
+
+        /// @returns The number of buffers allocated
+        uint32_t buffer_count() const
+        {
+            return m_buffers.size();
+        }
+
+        const memory_map_buffer& buffer(uint32_t index) const
+        {
+            assert(index < m_buffers.size());
+            return m_buffers[index];
         }
 
         private:
 
+            /// The memory mapped buffers
             std::vector<memory_map_buffer> m_buffers;
 
     };

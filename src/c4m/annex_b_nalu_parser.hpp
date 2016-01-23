@@ -20,7 +20,7 @@ namespace c4m
             : m_start(start),
               m_end(end),
               m_cursor(start),
-              m_start_code_size(0)
+              m_startcode_size(0)
         {
             assert(m_start);
             assert(m_end);
@@ -51,7 +51,7 @@ namespace c4m
             // Jump over the start code; When initializing the parser
             // m_cursor equals m_start and the m_start_code is zero - so we
             // start from the beginning
-            m_cursor += m_start_code_size;
+            m_cursor += m_startcode_size;
 
             for(;;++m_cursor)
             {
@@ -68,7 +68,7 @@ namespace c4m
 
                 if (m_cursor[2] == 0x01)
                 {
-                    m_start_code_size = 3;
+                    m_startcode_size = 3;
                     return;
                 }
 
@@ -82,7 +82,7 @@ namespace c4m
 
                 if(m_cursor[3] == 0x01)
                 {
-                    m_start_code_size = 4;
+                    m_startcode_size = 4;
                     return;
                 }
             }
@@ -106,9 +106,9 @@ namespace c4m
         }
 
         /// @return The size of the start code of the current NALU
-        uint32_t start_code_size() const
+        uint32_t startcode_size() const
         {
-            return m_start_code_size;
+            return m_startcode_size;
         }
 
     private:
@@ -117,7 +117,7 @@ namespace c4m
         const uint8_t* m_end;
         const uint8_t* m_cursor;
 
-        uint32_t m_start_code_size;
+        uint32_t m_startcode_size;
 
     };
 }

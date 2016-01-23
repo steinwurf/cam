@@ -19,6 +19,10 @@
 #include "check_supports_h264_format_layer.hpp"
 #include "set_h264_format_layer.hpp"
 #include "memory_map_layer.hpp"
+#include "buffer_queue_layer.hpp"
+#include "streaming_layer.hpp"
+#include "capture_layer.hpp"
+#include "zero_timestamp_at_initial_capture.hpp"
 
 #include "scoped_file_descriptor.hpp"
 #include "open.hpp"

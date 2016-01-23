@@ -26,11 +26,17 @@ namespace c4m
 
         c4m::annex_b_nalu_parser parser(data, data + size);
 
+        // Get information for the first NALU
         const uint8_t* nalu_start = parser.nalu();
         const uint8_t* nalu_end = nullptr;
 
         while (!parser.at_end())
         {
+            // Fetch the start code size before we search for the next NALU
+            // in order to find the end.
+            uint32_t startcode_size = parser.startcode_size();
+
+            // Find the next NALU such that we know where the current ends
             parser.advance();
 
             // The logic here basically is that the end of the NALU is the
@@ -41,12 +47,14 @@ namespace c4m
             }
             else
             {
+                // No more NALUs so we set the end as the end of the buffer
                 nalu_end = data + size;
             }
 
             annex_b_nalu nalu;
             nalu.m_data = nalu_start;
             nalu.m_size = nalu_end - nalu_start;
+            nalu.m_startcode_size = startcode_size;
 
             nalus.push_back(nalu);
 

@@ -11,8 +11,6 @@
 
 namespace c4m
 {
-namespace linux
-{
     /// Captured data from the camera
     struct capture_data
     {
@@ -33,7 +31,7 @@ namespace linux
         }
 
         /// Pointer to the captured memory buffer
-        uint8_t* m_data;
+        const uint8_t* m_data;
 
         /// Size of the captured memory buffer in bytes
         uint32_t m_size;
@@ -42,5 +40,23 @@ namespace linux
         /// microseconds, starting from zero at the initial capture
         uint64_t m_timestamp;
     };
-}
+
+    /// Output operator for the capture data struct
+    std::ostream& operator<<(std::ostream& os, const capture_data& data)
+    {
+        if (!data)
+        {
+            os << "c4m::capture_data: invalid struct";
+            return os;
+        }
+
+        os << "c4m::capture_data: m_data = " << (void*) data.m_data << " "
+           << "m_size = " << data.m_size << " m_timestamp = "
+           << data.m_timestamp;
+
+        return os;
+    }
+
+
+
 }
