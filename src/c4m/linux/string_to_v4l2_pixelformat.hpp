@@ -17,7 +17,7 @@ namespace linux
     ///
     /// Docs: https://linuxtv.org/downloads/v4l-dvb-apis/vidioc-enum-fmt.html
     ///
-    uint32_t string_to_v4l2_pixel_format(const std::string& fourcc)
+    uint32_t string_to_v4l2_pixelformat(const std::string& fourcc)
     {
         assert(fourcc.size() == 4U);
         return v4l2_fourcc(fourcc[0],fourcc[1],fourcc[2],fourcc[3]);

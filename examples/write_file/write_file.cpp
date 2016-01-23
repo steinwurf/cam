@@ -79,6 +79,9 @@ void write_capture(const char* filename)
 
     // }
     {
+        c4m::linux::camera2 camera2;
+        std::error_code error;
+        camera2.open("/dev/video1", error);
         c4m::linux::camera camera;
         camera.open("/dev/video1");
         std::cout << camera.pixelformat() << std::endl;
@@ -87,12 +90,12 @@ void write_capture(const char* filename)
         std::cout << "w = " << camera.width() << " h = "
                   << camera.height() << std::endl;
 
-        camera.start_streaming();
+        // camera.start_streaming();
 
-        uint32_t max_buffer_size = camera.max_buffer_size();
-        std::cout << max_buffer_size << std::endl;
+        // uint32_t max_buffer_size = camera.max_buffer_size();
+        // std::cout << max_buffer_size << std::endl;
 
-        std::vector<uint8_t> buffer(max_buffer_size);
+        // std::vector<uint8_t> buffer(max_buffer_size);
 
     }
     std::cout << "=============" << std::endl;
