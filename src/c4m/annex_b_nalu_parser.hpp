@@ -13,6 +13,23 @@
 namespace c4m
 {
     /// Simple Annex B NALU parser i.e. finds the NALUs in some memory buffer
+    ///
+    /// Note on the Emulation Prevention bytes:
+    ///
+    ///     In short the following values are illegal (0x000000, 0x000001,
+    ///     0x000002) in the data of a H264 NALU. Therefore these vales are
+    ///     escaped using an 'Emulation Prevention' byte 0x03. See more:
+    ///     http://stackoverflow.com/a/24890903
+    ///
+    ///     This brings us to the question should we remove these 'Emulation
+    ///     Prevention' bytes when sending an raw stram. According to (luckely)
+    ///     we don't have to: http://bit.ly/1ZMwIWW.
+    ///
+    ///     This is backed by http://bit.ly/1PFeaNH who states that 'Emulation
+    ///     Prevention' bytes are part of the standard H264 and not something
+    ///     defined by Annex B. Therefore a raw H264 stream should contain
+    ///     'Emulation Prevention' bytes.
+    ///
     struct annex_b_nalu_parser
     {
         /// @todo lets change to take start and size

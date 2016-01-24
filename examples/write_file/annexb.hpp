@@ -26,7 +26,7 @@
 ///     This is backed by http://bit.ly/1PFeaNH who states that 'Emulation
 ///     Prevention' bytes are part of the standard H264 and not something
 ///     defined by Annex B. Therefore a raw H264 stream should contain
-///     *Emulation Prevention' bytes.
+///     'Emulation Prevention' bytes.
 ///
 
 namespace temp
@@ -84,23 +84,7 @@ namespace temp
 
     }
 
-    // From RFC 6184
-    //
-    // For convenience, the format of the NAL unit header is
-    // reprinted below:
-    //
-    //      +---------------+
-    //      |0|1|2|3|4|5|6|7|
-    //      +-+-+-+-+-+-+-+-+
-    //      |F|NRI|  Type   |
-    //      +---------------+
-    //
-    // Bitmask: 0001 1111 = 0x1F
-    uint8_t nalu_type(uint8_t nalu_header)
-    {
-        uint8_t type = nalu_header & 0x1F;
-        return type;
-    }
+
 
     // template<class
     // struct n

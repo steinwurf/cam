@@ -9,6 +9,9 @@
 #include <cstdint>
 #include <ostream>
 
+#include "nalu_type_from_header.hpp"
+#include "nalu_type_to_string.hpp"
+
 namespace c4m
 {
     /// Small struct representing an Annex B NALU
@@ -57,11 +60,14 @@ namespace c4m
             return os;
         }
 
+        uint8_t nalu_type = nalu_type_from_header(
+            nalu.m_data[nalu.m_startcode_size]);
+
         os << "c4m::annex_b_nalu: m_data = " << (void*) nalu.m_data << " "
            << "m_size = " << nalu.m_size << " m_startcode_size = "
-           << nalu.m_startcode_size;
+           << nalu.m_startcode_size << " (type = "
+           << nalu_type_to_string(nalu_type) << ")";
 
         return os;
     }
-
 }
