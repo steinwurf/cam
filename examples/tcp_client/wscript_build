@@ -4,4 +4,5 @@
 bld.program(features='cxx',
             source='tcp_client.cpp',
             target='tcp_client',
-            use=['boost_includes', 'boost_system', 'c4m_includes'])
+            use=['boost_includes', 'boost_system', 'c4m_includes',
+                 'sak_includes'])

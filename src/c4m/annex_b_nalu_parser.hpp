@@ -30,12 +30,24 @@ namespace c4m
     ///     defined by Annex B. Therefore a raw H264 stream should contain
     ///     'Emulation Prevention' bytes.
     ///
+    /// In Annex B a NALU is prefixed by either a 3 or 4 byte start code:
+    ///
+    ///    4 byte variant: 0x00000001
+    ///    3 byte variant: 0x000001
+    ///
+    /// In the following we search for the start codes and return the
+    /// offset to the NALU data followed by the start code.
+    ///
     struct annex_b_nalu_parser
     {
-        /// @todo lets change to take start and size
-        annex_b_nalu_parser(const uint8_t* start, const uint8_t* end)
+        /// Initializes the paser with a pointer to some memory buffer and
+        /// size
+        ///
+        /// @param start The start of the memory buffer we are parsing
+        /// @param size The size of the memory buffer in bytes
+        annex_b_nalu_parser(const uint8_t* start, uint32_t size)
             : m_start(start),
-              m_end(end),
+              m_end(start + size),
               m_cursor(start),
               m_startcode_size(0)
         {
@@ -49,16 +61,7 @@ namespace c4m
             advance();
         }
 
-        // In Annex B a NALU is prefixed by either a 3 or 4 byte start code:
-        //
-        //    4 byte variant: 0x00000001
-        //    3 byte variant: 0x000001
-        //
-        // In the following we search for the start codes and return the
-        // offset to the NALU header following the start code.
-        //
-        // @return The offset to the next NALU header, if no valid start code is
-        //         found returns
+        /// If not at the end of the buffer move to the next NALU
         void advance()
         {
             assert(m_start != nullptr);
@@ -130,10 +133,17 @@ namespace c4m
 
     private:
 
+        /// Start of the memory buffer we are parsing
         const uint8_t* m_start;
+
+        /// The end of the memory buffer
         const uint8_t* m_end;
+
+        /// The current position of the parser, points to the current
+        /// NALU. The curser is updated when calling advance.
         const uint8_t* m_cursor;
 
+        /// The size if the current NALU's startcode in bytes
         uint32_t m_startcode_size;
 
     };

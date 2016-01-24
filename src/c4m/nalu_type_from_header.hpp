@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "nalu_type.hpp"
+
 namespace c4m
 {
     /// From RFC 6184 (https://tools.ietf.org/html/rfc6184#section-1.3)
@@ -22,9 +24,9 @@ namespace c4m
     ///
     /// To extract type we use bitmask: 0001 1111 = 0x1F
     ///
-    uint8_t nalu_type_from_header(uint8_t nalu_header)
+    nalu_type nalu_type_from_header(uint8_t nalu_header)
     {
         uint8_t type = nalu_header & 0x1F;
-        return type;
+        return static_cast<nalu_type>(type);
     }
 }

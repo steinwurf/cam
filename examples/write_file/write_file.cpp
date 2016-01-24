@@ -26,7 +26,7 @@ void write_to_file(std::fstream& file, T value)
 {
     static char buffer[sizeof(T)];
 
-    sak::big_endian::put<uint32_t>(value, (uint8_t*) buffer);
+    sak::big_endian::put<T>(value, (uint8_t*) buffer);
 
     file.write(buffer, sizeof(T));
 }
@@ -110,8 +110,13 @@ void write_raw_capture(const char* device, const char* filename)
 /// NALU size | uint32_t
 /// NALU data | NALU size
 ///
-/// The NALU data contains the "raw" NALU data i.e. stripped of the Annex B
-/// start codes. So the first byte of the NALU data will be the NALU header.
+/// The first NALU will be the SPS, the second NALU will be the PPS which
+/// is the followed by the video NALUs. The SPS and PPS NALUs will
+/// periodically repeat.
+///
+/// The NALU data contains the Annex B NALU data i.e. containing the Annex
+/// B start codes. So the first byte of the NALU data will be the 3 or 4
+/// byte Annex B start code followed by the NALU header.
 ///
 /// All multi-byte fields are written in Big Endian format.
 ///
@@ -140,7 +145,7 @@ void write_custom_capture(const char* device, const char* filename)
     camera.start_streaming();
 
     uint32_t frames = 0;
-    while(frames < 100)
+    while(frames < 500)
     {
         auto data = camera.capture();
         assert(data);
@@ -156,12 +161,8 @@ void write_custom_capture(const char* device, const char* filename)
 
             write_to_file<uint64_t>(capture_file, data.m_timestamp);
 
-            // NALU size and data without startcode
-            auto nalu_size = nalu.m_size - nalu.m_startcode_size;
-            auto nalu_data = nalu.m_data + nalu.m_startcode_size;
-
-            write_to_file<uint32_t>(capture_file, nalu_size);
-            write_to_file(capture_file, nalu_data, nalu_size);
+            write_to_file<uint32_t>(capture_file, nalu.m_size);
+            write_to_file(capture_file, nalu.m_data, nalu.m_size);
         }
 
         ++frames;
@@ -176,8 +177,7 @@ int main(int argc, char* argv[])
 
     try
     {
-        // write_capture("/dev/video0", "capture.h264");
-        write_raw_capture("/dev/video1", "raw_capture.h264");
+//        write_raw_capture("/dev/video1", "raw_capture.h264");
         write_custom_capture("/dev/video1", "custom_capture.h264");
     }
     catch (std::exception& e)

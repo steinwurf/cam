@@ -24,7 +24,7 @@ namespace c4m
     {
         std::vector<annex_b_nalu> nalus;
 
-        c4m::annex_b_nalu_parser parser(data, data + size);
+        c4m::annex_b_nalu_parser parser(data, size);
 
         // Get information for the first NALU
         const uint8_t* nalu_start = parser.nalu();
@@ -55,6 +55,8 @@ namespace c4m
             nalu.m_data = nalu_start;
             nalu.m_size = nalu_end - nalu_start;
             nalu.m_startcode_size = startcode_size;
+            nalu.m_type = nalu_type_from_header(
+                nalu_start[startcode_size]);
 
             nalus.push_back(nalu);
 

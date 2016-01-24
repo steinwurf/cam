@@ -11,19 +11,43 @@
 #include <utility>
 #include <boost/asio.hpp>
 
+#include <sak/convert_endian.hpp>
+
 #include <c4m/linux/linux.hpp>
 #include <c4m/linux/layers.hpp>
+#include <c4m/annex_b_find_nalus.hpp>
 
 namespace ba = boost::asio;
 
+/// Helper to write types to the socket
+template<class T>
+void write_to_socket(ba::ip::tcp::socket& socket, T value)
+{
+    static uint8_t data[sizeof(T)];
+
+    sak::big_endian::put<T>(value, data);
+
+    ba::write(socket, ba::buffer(data, sizeof(T)));
+}
+
+// Helper to write raw binary data to the socket
+void write_to_socket(ba::ip::tcp::socket& socket,
+                     const uint8_t* data, uint32_t size)
+{
+    ba::write(socket, ba::buffer(data, size));
+}
+
+/// Write data to the socket in the same format as given for the
+/// write_custom_capture(...) function in
+/// examples/write_file/write_file.cpp
 class tcp_server
 {
 public:
 
-    tcp_server(ba::io_service& io_service, uint16_t port)
+    tcp_server(ba::io_service& io_service)
         : m_io_service(io_service),
           m_acceptor(io_service,
-                     ba::ip::tcp::endpoint(ba::ip::tcp::v4(), port))
+                     ba::ip::tcp::endpoint(ba::ip::tcp::v4(), 54321))
     {
         do_accept();
     }
@@ -32,73 +56,50 @@ private:
 
     void do_stream(ba::ip::tcp::socket client)
     {
-        c4m::linux::camera cam;
+         c4m::linux::camera2 camera;
+         camera.open("/dev/video1");
 
-        auto fd = c4m::linux::open("/dev/video1");
+         std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
-        v4l2_capability capability;
-        memset(&capability, 0, sizeof(capability));
-        c4m::linux::read_capability(fd, &capability);
+         std::cout << "Requesting resolution: " << std::endl;
+         camera.request_resolution(400,500);
+         std::cout << "w = " << camera.width() << " "
+                   << "h = " << camera.height() << std::endl;
 
-        assert(c4m::linux::is_a_video_capture_device(capability));
-        assert(c4m::linux::has_streaming_io_ioctls(capability));
+         // Write header
+         write_to_socket<uint32_t>(client, camera.width());
+         write_to_socket<uint32_t>(client, camera.height());
 
-        v4l2_format format = c4m::linux::read_format(fd);
+         camera.start_streaming();
 
-        // Request format
-        format.fmt.pix.width = 800;
-        format.fmt.pix.height = 600;
-        format.fmt.pix.pixelformat = v4l2_fourcc('H','2','6','4');
+         while(1)
+         {
+             auto data = camera.capture();
+             assert(data);
 
-        c4m::linux::set_format(fd, &format);
+             std::cout << data << std::endl;
 
-        c4m::linux::print_v4l2_format(std::cout, format);
+             auto nalus = c4m::annex_b_find_nalus(data.m_data, data.m_size);
 
-        uint32_t buffer_count =
-            c4m::linux::request_memory_map_buffers(fd, 3);
+             for(const auto& nalu : nalus)
+             {
+                 std::cout << "  " << nalu << std::endl;
+                 assert(nalu);
 
-        auto buffers = c4m::linux::memory_map_buffers(fd, buffer_count);
+                 write_to_socket<uint64_t>(client, data.m_timestamp);
 
-        assert(buffers.size() == buffer_count);
-
-        c4m::linux::enqueue_buffers(fd, buffer_count);
-        c4m::linux::start_streaming(fd);
-
-        while(1)
-        {
-            auto buffer_info = c4m::linux::dequeue_buffer(fd);
-
-            uint32_t index = buffer_info.index;
-            uint32_t bytesused = buffer_info.bytesused;
-
-            std::cout << "Dequeued index = " << index
-                      << " bytes used = " << bytesused
-                      << std::endl;
-
-            assert(index < buffers.size());
-
-            const auto& b = buffers[index];
-
-            assert(b);
-
-            ba::write(client, ba::buffer(b.data(), bytesused));
-
-            // Re-enqueue that buffer
-            c4m::linux::enqueue_buffer(fd, index);
-            // ++frames;
-        }
-
-        // c4m::linux::stop_streaming(fd);
-
-        // client.shutdown(ba::ip::tcp::socket::shutdown_both);
-        // client.close();
-
-
+                 write_to_socket<uint32_t>(client, nalu.m_size);
+                 write_to_socket(client, nalu.m_data, nalu.m_size);
+             }
+         }
     }
 
 
     void do_accept()
     {
+        auto server_endpoint = m_acceptor.local_endpoint();
+        std::cout << "Server on: " << server_endpoint << std::endl;
+
         while(1)
         {
             auto client_socket = ba::ip::tcp::socket(m_io_service);
@@ -138,7 +139,7 @@ int main(int argc, char* argv[])
     {
         ba::io_service io_service;
 
-        tcp_server s(io_service, 54321);
+        tcp_server s(io_service);
 
         io_service.run();
     }

@@ -12,12 +12,12 @@
 namespace c4m
 {
     /// @return Human readable message corresponding to an error code
-    std::string nalu_type_to_string(uint8_t type)
+    std::string nalu_type_to_string(nalu_type type)
     {
         switch(type)
         {
-            #define C4M_NALU_TYPE_TAG(id,msg,vcl) \
-                case id: return msg;
+            #define C4M_NALU_TYPE_TAG(value,id,msg,vcl)      \
+                case nalu_type::id: return msg;
             #include "nalu_type_tags.hpp"
             #undef C4M_NALU_TYPE_TAG
         }

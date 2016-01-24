@@ -33,6 +33,11 @@ def resolve(ctx):
         git_repository='github.com/steinwurf/sak.git',
         major=15))
 
+    ctx.add_dependency(resolve.ResolveVersion(
+        name='vitus',
+        git_repository='bitbucket.org/steinwurf/vitus.git',
+        major=3))
+
     # Internal dependencies
     if ctx.is_toplevel():
 
