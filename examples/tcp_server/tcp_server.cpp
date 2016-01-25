@@ -12,10 +12,10 @@
 #include <boost/asio.hpp>
 
 #include <sak/convert_endian.hpp>
+#include <n4lu/to_annex_b_nalus.hpp>
 
 #include <c4m/linux/linux.hpp>
 #include <c4m/linux/layers.hpp>
-#include <c4m/annex_b_find_nalus.hpp>
 
 namespace ba = boost::asio;
 
@@ -72,6 +72,8 @@ private:
 
          camera.start_streaming();
 
+         // Counts the number of NALUs
+         uint32_t nalu_count = 0;
          while(1)
          {
              auto data = camera.capture();
@@ -79,17 +81,18 @@ private:
 
              std::cout << data << std::endl;
 
-             auto nalus = c4m::annex_b_find_nalus(data.m_data, data.m_size);
+             auto nalus = n4lu::to_annex_b_nalus(data.m_data, data.m_size);
 
              for(const auto& nalu : nalus)
              {
-                 std::cout << "  " << nalu << std::endl;
+                 std::cout << "  " << nalu_count << ": " << nalu << std::endl;
                  assert(nalu);
 
                  write_to_socket<uint64_t>(client, data.m_timestamp);
 
                  write_to_socket<uint32_t>(client, nalu.m_size);
                  write_to_socket(client, nalu.m_data, nalu.m_size);
+                 ++nalu_count;
              }
          }
     }

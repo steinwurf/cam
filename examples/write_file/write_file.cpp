@@ -10,11 +10,12 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+
 #include <sak/convert_endian.hpp>
+#include <n4lu/to_annex_b_nalus.hpp>
 
 #include <c4m/linux/linux.hpp>
 #include <c4m/linux/layers.hpp>
-#include <c4m/annex_b_find_nalus.hpp>
 
 #include "hexdump.hpp"
 //#include "annexb.hpp"
@@ -65,7 +66,7 @@ void write_raw_capture(const char* device, const char* filename)
     camera.start_streaming();
 
     uint32_t frames = 0;
-    while(frames < 100)
+    while(frames < 500)
     {
         auto data = camera.capture();
         std::cout << data << std::endl;
@@ -138,6 +139,10 @@ void write_custom_capture(const char* device, const char* filename)
     std::cout << "w = " << camera.width() << " "
               << "h = " << camera.height() << std::endl;
 
+    // The time stamp of the previous captured NALU (needed to
+    // calculate difference between two NALUs)
+    uint64_t previous_timestamp = 0;
+
     // Write header
     write_to_file<uint32_t>(capture_file, camera.width());
     write_to_file<uint32_t>(capture_file, camera.height());
@@ -150,9 +155,15 @@ void write_custom_capture(const char* device, const char* filename)
         auto data = camera.capture();
         assert(data);
 
-        std::cout << data << std::endl;
+        uint32_t diff_timestamp = data.m_timestamp - previous_timestamp;
+        assert(data.m_timestamp >= previous_timestamp);
 
-        auto nalus = c4m::annex_b_find_nalus(data.m_data, data.m_size);
+        previous_timestamp = data.m_timestamp;
+
+        std::cout << data << " diff_timestamp = "
+                  << diff_timestamp << std::endl;
+
+        auto nalus = n4lu::to_annex_b_nalus(data.m_data, data.m_size);
 
         for(const auto& nalu : nalus)
         {
@@ -177,7 +188,7 @@ int main(int argc, char* argv[])
 
     try
     {
-//        write_raw_capture("/dev/video1", "raw_capture.h264");
+        write_raw_capture("/dev/video1", "raw_capture.h264");
         write_custom_capture("/dev/video1", "custom_capture.h264");
     }
     catch (std::exception& e)

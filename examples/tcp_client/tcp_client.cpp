@@ -12,9 +12,7 @@
 #include <boost/asio.hpp>
 
 #include <sak/convert_endian.hpp>
-
-#include <c4m/annex_b_find_nalus.hpp>
-
+#include <n4lu/to_annex_b_nalu.hpp>
 
 namespace ba = boost::asio;
 
@@ -40,8 +38,6 @@ int main(int argc, char* argv[])
 {
     try
     {
-
-
         ba::io_service io_service;
 
         ba::ip::tcp::socket s(io_service);
@@ -64,6 +60,8 @@ int main(int argc, char* argv[])
 
         std::cout << "w = " << width << " h = " << height << std::endl;
 
+        // Counts the number of NALUs
+        uint32_t nalu_count = 0;
         while(1)
         {
 
@@ -78,19 +76,15 @@ int main(int argc, char* argv[])
 
             read_from_socket(s, buffer.data(), size);
 
-            auto nalus = c4m::annex_b_find_nalus(buffer.data(), size);
-
             std::cout << "Read: size = " << size << " "
                       << "timestamp = " << timestamp << " "
                       << "sampletime = " << sample_time << std::endl;
 
-             for(const auto& nalu : nalus)
-             {
-                 std::cout << "  " <<  nalu << std::endl;
-                 assert(nalu);
-             }
+            auto nalu = n4lu::to_annex_b_nalu(buffer.data(), size);
+            std::cout << "  " << nalu_count << ": " <<  nalu << std::endl;
 
-             previous_timestamp = timestamp;
+            previous_timestamp = timestamp;
+            ++nalu_count;
         }
     }
     catch (std::exception& e)
