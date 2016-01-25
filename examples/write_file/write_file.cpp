@@ -18,8 +18,6 @@
 #include <c4m/linux/layers.hpp>
 
 #include "hexdump.hpp"
-//#include "annexb.hpp"
-
 
 /// Helper to write types to the file
 template<class T>
@@ -135,7 +133,7 @@ void write_custom_capture(const char* device, const char* filename)
     std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
     std::cout << "Requesting resolution: " << std::endl;
-    camera.request_resolution(400,500);
+    camera.request_resolution(800,600);
     std::cout << "w = " << camera.width() << " "
               << "h = " << camera.height() << std::endl;
 
@@ -156,12 +154,15 @@ void write_custom_capture(const char* device, const char* filename)
         assert(data);
 
         uint32_t diff_timestamp = data.m_timestamp - previous_timestamp;
-        assert(data.m_timestamp >= previous_timestamp);
-
-        previous_timestamp = data.m_timestamp;
 
         std::cout << data << " diff_timestamp = "
                   << diff_timestamp << std::endl;
+
+        if (data.m_timestamp < previous_timestamp)
+            continue;
+
+        assert(data.m_timestamp >= previous_timestamp);
+        previous_timestamp = data.m_timestamp;
 
         auto nalus = n4lu::to_annex_b_nalus(data.m_data, data.m_size);
 
