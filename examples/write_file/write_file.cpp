@@ -181,20 +181,58 @@ void write_custom_capture(const char* device, const char* filename)
     }
 }
 
+/// locates the first camera with h264 capablities, or returns an empty string
+/// if no camera was found.
+std::string find_camera()
+{
+    // A bold assumption has been made here; if the user has a h264 capable
+    // camera, it's one of the first 42 connected cameras.
+    for (uint32_t i = 0U; i < 42U; ++i)
+    {
+        std::stringstream ss;
+        ss << "/dev/video" << i;
+        auto camera_file = ss.str();
+        std::fstream c(camera_file);
+
+        // check if camera exists
+        if (!c.good())
+            continue;
+
+        // check if camera has h264 capablities
+        c4m::linux::camera2 cc;
+
+        std::error_code error;
+        cc.open(camera_file.c_str(), error);
+        if (!error)
+            return camera_file;
+
+    }
+    return "";
+}
 
 int main(int argc, char* argv[])
 {
     (void) argc;
     (void) argv;
 
+
+    auto camera_file = find_camera();
+
+    if (camera_file.empty())
+    {
+        std::cerr << "Error: No h264 capable camera found." << std::endl;
+        return 1;
+    }
+
     try
     {
-        write_raw_capture("/dev/video1", "raw_capture.h264");
-        write_custom_capture("/dev/video1", "custom_capture.h264");
+        write_raw_capture(camera_file.c_str(), "raw_capture.h264");
+        write_custom_capture(camera_file.c_str(), "custom_capture.h264");
     }
     catch (std::exception& e)
     {
-        std::cerr << "Exception: " << e.what() << "\n";
+        std::cerr << "Exception: " << e.what() << std::endl;
+        return 1;
     }
 
     return 0;

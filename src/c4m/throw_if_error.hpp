@@ -25,6 +25,17 @@ namespace c4m
     template<class Super>
     class throw_if_error_layer : public Super
     {
+
+    public:
+
+        // Avoid name hiding. For more information about name hiding see:
+        // http://www.stroustrup.com/bs_faq2.html#overloadderived
+        using Super::open;
+        using Super::request_resolution;
+        using Super::start_streaming;
+        using Super::stop_streaming;
+        using Super::capture;
+
     public:
 
         void open(const char* device)

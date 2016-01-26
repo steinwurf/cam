@@ -36,6 +36,9 @@ void read_from_socket(ba::ip::tcp::socket& socket,
 
 int main(int argc, char* argv[])
 {
+    (void) argc;
+    (void) argv;
+
     try
     {
         ba::io_service io_service;
