@@ -181,6 +181,186 @@ void write_custom_capture(const char* device, const char* filename)
     }
 }
 
+std::vector<c4m::capture_data>
+split_capture_on_nalu_type(const c4m::capture_data& data)
+{
+    std::vector<c4m::capture_data> split_capture;
+
+    auto nalus = n4lu::to_annex_b_nalus(data.m_data, data.m_size);
+
+    c4m::capture_data aggregate;
+
+    for (const auto& nalu : nalus)
+    {
+        if (nalu.m_type == n4lu::nalu_type::sequence_parameter_set ||
+            nalu.m_type == n4lu::nalu_type::picture_parameter_set)
+        {
+            if (aggregate)
+            {
+                // If we already have aggregated some data we push that
+                // back and reset the aggregate before pushing the SPS or
+                // PPS separately
+                split_capture.push_back(aggregate);
+                aggregate = c4m::capture_data();
+            }
+
+            // Push the SPS or PPS as separate capture data
+            c4m::capture_data ps(nalu.m_data, nalu.m_size, data.m_timestamp);
+            split_capture.push_back(ps);
+
+            // Next NALU
+            continue;
+        }
+
+        if (!aggregate)
+        {
+            // No aggregate data yet, so we start from this NALU
+            aggregate = c4m::capture_data(nalu.m_data, nalu.m_size,
+                                          data.m_timestamp);
+        }
+        else
+        {
+            // We already have an aggregate so add this NALU
+            aggregate.m_size += nalu.m_size;
+        }
+    }
+
+    if (aggregate)
+    {
+        split_capture.push_back(aggregate);
+    }
+
+    return split_capture;
+}
+
+/// Writes a custom capture v2 file with the following binary format:
+///
+/// @code
+///
+///    0                   1                   2                   3
+///    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///   |                           width                               |
+///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///   |                           height                              |
+///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///   |                       SPS timestamp                           |
+///   |                                                               |
+///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///   |                        SPS NALU size                          |
+///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///   |                          SPS NALU                             |
+///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///   |                       PPS timestamp                           |
+///   |                                                               |
+///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///   |                        PPS NALU size                          |
+///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///   |                          PPS NALU                             |
+///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///   |                     Aggregate timestamp                       |
+///   |                                                               |
+///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///   |                      Aggregate NALU size                      |
+///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///   |                                                               |
+///   :                    Aggregate NALU data                        :
+///   |                                                               |
+///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///
+/// @endcode
+///
+/// The three fields: timestamp, NALU size, NALU data will repeat until the
+/// end of file.
+///
+/// Field     | size
+/// ---------------
+/// width     | uint32_t
+/// height    | uint32_t
+/// timestamp | uint64_t
+/// NALU size | uint32_t
+/// NALU data | NALU size
+///
+/// The first NALU will be the SPS, the second NALU will be the PPS which
+/// is the followed by the video NALUs. The SPS and PPS NALUs will
+/// periodically repeat.
+///
+/// The aggregate NALU data contains the Annex B NALU data i.e. containing
+/// the Annex B start codes. So the first byte of the NALU data will be the
+/// 3 or 4 byte Annex B start code followed by the NALU header. The
+/// aggregate NALU data may contain 1 or more NALUs (SPS and PPS are always
+/// sent in non-aggregate fashion).
+///
+/// All multi-byte fields are written in Big Endian format.
+///
+void write_custom_capture_v2(const char* device, const char* filename)
+{
+    std::fstream capture_file(filename, std::ios::out |
+                              std::ios::binary | std::ios::trunc);
+
+    std::cout << "Custom capture file: " << filename << std::endl;
+    std::cout << "Device: " << device << std::endl;
+
+    c4m::linux::camera2 camera;
+    camera.open(device);
+
+    std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
+
+    std::cout << "Requesting resolution: " << std::endl;
+    camera.request_resolution(800,600);
+    std::cout << "w = " << camera.width() << " "
+              << "h = " << camera.height() << std::endl;
+
+    // The time stamp of the previous captured NALU (needed to
+    // calculate difference between two NALUs)
+    uint64_t previous_timestamp = 0;
+
+    // Write header
+    write_to_file<uint32_t>(capture_file, camera.width());
+    write_to_file<uint32_t>(capture_file, camera.height());
+
+    camera.start_streaming();
+
+    uint32_t frames = 0;
+    while(frames < 500)
+    {
+        auto data = camera.capture();
+        assert(data);
+
+        uint32_t diff_timestamp = data.m_timestamp - previous_timestamp;
+        if (data.m_timestamp < previous_timestamp)
+        {
+            std::cout << "Drop capture data due to timestamp issue" << std::endl;
+            continue;
+        }
+
+        assert(data.m_timestamp >= previous_timestamp);
+        previous_timestamp = data.m_timestamp;
+
+        auto split_captures = split_capture_on_nalu_type(data);
+
+        for (const auto& c : split_captures)
+        {
+            std::cout << c << " diff_timestamp = "
+                      << diff_timestamp << std::endl;
+
+            auto nalus = n4lu::to_annex_b_nalus(c.m_data, c.m_size);
+
+            for(const auto& nalu : nalus)
+            {
+                std::cout << "  " << nalu << std::endl;
+                assert(nalu);
+            }
+
+            write_to_file<uint64_t>(capture_file, c.m_timestamp);
+            write_to_file<uint32_t>(capture_file, c.m_size);
+            write_to_file(capture_file, c.m_data, c.m_size);
+        }
+
+        ++frames;
+    }
+}
+
 /// locates the first camera with h264 capablities, or returns an empty string
 /// if no camera was found.
 std::string find_camera()
@@ -226,8 +406,8 @@ int main(int argc, char* argv[])
 
     try
     {
-        write_raw_capture(camera_file.c_str(), "raw_capture.h264");
-        write_custom_capture(camera_file.c_str(), "custom_capture.h264");
+        // write_raw_capture(camera_file.c_str(), "raw_capture.h264");
+        write_custom_capture_v2(camera_file.c_str(), "custom_capture_v2.h264");
     }
     catch (std::exception& e)
     {

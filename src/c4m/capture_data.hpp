@@ -18,6 +18,14 @@ namespace c4m
         capture_data() : m_data(nullptr), m_size(0), m_timestamp(0)
         { }
 
+        /// Construct a new capture data
+        capture_data(const uint8_t* data, uint32_t size, uint64_t timestamp)
+            : m_data(data), m_size(size), m_timestamp(timestamp)
+        {
+            assert(m_data);
+            assert(m_size > 0);
+        }
+
         /// @return True if the capture data is valid otherwise false
         operator bool() const
         {
