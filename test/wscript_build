@@ -5,4 +5,4 @@ bld.program(
     features='cxx test',
     source=['c4m_tests.cpp'] + bld.path.ant_glob('src/**/*.cpp'),
     target='c4m_tests',
-    use=['gtest','c4m_includes'])
+    use=['gtest','c4m_includes', 'n4lu_includes'])
