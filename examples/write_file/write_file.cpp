@@ -16,6 +16,8 @@
 
 #include <c4m/linux/linux.hpp>
 #include <c4m/linux/layers.hpp>
+#include <c4m/linux/find_camera.hpp>
+#include <c4m/split_capture_on_nalu_type.hpp>
 
 #include "hexdump.hpp"
 
@@ -181,57 +183,7 @@ void write_custom_capture(const char* device, const char* filename)
     }
 }
 
-std::vector<c4m::capture_data>
-split_capture_on_nalu_type(const c4m::capture_data& data)
-{
-    std::vector<c4m::capture_data> split_capture;
 
-    auto nalus = n4lu::to_annex_b_nalus(data.m_data, data.m_size);
-
-    c4m::capture_data aggregate;
-
-    for (const auto& nalu : nalus)
-    {
-        if (nalu.m_type == n4lu::nalu_type::sequence_parameter_set ||
-            nalu.m_type == n4lu::nalu_type::picture_parameter_set)
-        {
-            if (aggregate)
-            {
-                // If we already have aggregated some data we push that
-                // back and reset the aggregate before pushing the SPS or
-                // PPS separately
-                split_capture.push_back(aggregate);
-                aggregate = c4m::capture_data();
-            }
-
-            // Push the SPS or PPS as separate capture data
-            c4m::capture_data ps(nalu.m_data, nalu.m_size, data.m_timestamp);
-            split_capture.push_back(ps);
-
-            // Next NALU
-            continue;
-        }
-
-        if (!aggregate)
-        {
-            // No aggregate data yet, so we start from this NALU
-            aggregate = c4m::capture_data(nalu.m_data, nalu.m_size,
-                                          data.m_timestamp);
-        }
-        else
-        {
-            // We already have an aggregate so add this NALU
-            aggregate.m_size += nalu.m_size;
-        }
-    }
-
-    if (aggregate)
-    {
-        split_capture.push_back(aggregate);
-    }
-
-    return split_capture;
-}
 
 /// Writes a custom capture v2 file with the following binary format:
 ///
@@ -307,7 +259,7 @@ void write_custom_capture_v2(const char* device, const char* filename)
     std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
     std::cout << "Requesting resolution: " << std::endl;
-    camera.request_resolution(800,600);
+    camera.request_resolution(400,600);
     std::cout << "w = " << camera.width() << " "
               << "h = " << camera.height() << std::endl;
 
@@ -337,7 +289,7 @@ void write_custom_capture_v2(const char* device, const char* filename)
         assert(data.m_timestamp >= previous_timestamp);
         previous_timestamp = data.m_timestamp;
 
-        auto split_captures = split_capture_on_nalu_type(data);
+        auto split_captures = c4m::split_capture_on_nalu_type(data);
 
         for (const auto& c : split_captures)
         {
@@ -359,35 +311,13 @@ void write_custom_capture_v2(const char* device, const char* filename)
 
         ++frames;
     }
-}
 
-/// locates the first camera with h264 capablities, or returns an empty string
-/// if no camera was found.
-std::string find_camera()
-{
-    // A bold assumption has been made here; if the user has a h264 capable
-    // camera, it's one of the first 42 connected cameras.
-    for (uint32_t i = 0U; i < 42U; ++i)
-    {
-        std::stringstream ss;
-        ss << "/dev/video" << i;
-        auto camera_file = ss.str();
-        std::fstream c(camera_file);
+    std::cout << "Custom capture file: " << filename << std::endl;
+    std::cout << "Device: " << device << std::endl;
 
-        // check if camera exists
-        if (!c.good())
-            continue;
+    std::cout << "w = " << camera.width() << " "
+              << "h = " << camera.height() << std::endl;
 
-        // check if camera has h264 capablities
-        c4m::linux::camera2 cc;
-
-        std::error_code error;
-        cc.open(camera_file.c_str(), error);
-        if (!error)
-            return camera_file;
-
-    }
-    return "";
 }
 
 int main(int argc, char* argv[])
@@ -396,7 +326,7 @@ int main(int argc, char* argv[])
     (void) argv;
 
 
-    auto camera_file = find_camera();
+    auto camera_file = c4m::linux::find_camera();
 
     if (camera_file.empty())
     {

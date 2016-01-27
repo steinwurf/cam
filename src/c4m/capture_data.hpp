@@ -8,6 +8,8 @@
 #pragma once
 
 #include <cstdint>
+#include <cassert>
+#include <ostream>
 
 namespace c4m
 {
@@ -50,7 +52,7 @@ namespace c4m
     };
 
     /// Output operator for the capture data struct
-    std::ostream& operator<<(std::ostream& os, const capture_data& data)
+    inline std::ostream& operator<<(std::ostream& os, const capture_data& data)
     {
         if (!data)
         {
