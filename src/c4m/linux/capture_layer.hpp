@@ -75,7 +75,12 @@ namespace linux
 
     private:
 
+        /// Keeps track of whether we have a buffer to enqueue when calling
+        /// the capture(...) function.
         bool m_enqueue_on_capture = false;
+
+        /// The index of the buffer we should enqueue when capture(...) is
+        /// called
         uint32_t m_enqueue_index = 0;
     };
 }

@@ -53,7 +53,7 @@ void write_raw_capture(const char* device, const char* filename)
     std::cout << "Raw capture file: " << filename << std::endl;
     std::cout << "Device: " << device << std::endl;
 
-    c4m::linux::camera2 camera;
+    c4m::linux::camera2<c4m::default_features> camera;
     camera.open(device);
 
     std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
@@ -129,7 +129,7 @@ void write_custom_capture(const char* device, const char* filename)
     std::cout << "Custom capture file: " << filename << std::endl;
     std::cout << "Device: " << device << std::endl;
 
-    c4m::linux::camera2 camera;
+    c4m::linux::camera2<c4m::default_features> camera;
     camera.open(device);
 
     std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
@@ -253,7 +253,24 @@ void write_custom_capture_v2(const char* device, const char* filename)
     std::cout << "Custom capture file: " << filename << std::endl;
     std::cout << "Device: " << device << std::endl;
 
-    c4m::linux::camera2 camera;
+    using features = c4m::default_features::
+        append<c4m::enable_trace>;
+
+    using camera_type = c4m::linux::camera2<features>;
+    camera_type camera;
+
+    if (c4m::has_set_trace_callback<camera_type>::value)
+    {
+        c4m::set_trace_callback(camera,
+            [](const std::string& zone, const std::string& msg)
+            {
+                if (zone == "capture_layer")
+                    return;
+
+                std::cout << zone << ":\n" << msg << std::endl;
+            });
+    }
+
     camera.open(device);
 
     std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
@@ -293,16 +310,16 @@ void write_custom_capture_v2(const char* device, const char* filename)
 
         for (const auto& c : split_captures)
         {
-            std::cout << c << " diff_timestamp = "
-                      << diff_timestamp << std::endl;
+            // std::cout << c << " diff_timestamp = "
+            //           << diff_timestamp << std::endl;
 
             auto nalus = n4lu::to_annex_b_nalus(c.m_data, c.m_size);
 
-            for(const auto& nalu : nalus)
-            {
-                std::cout << "  " << nalu << std::endl;
-                assert(nalu);
-            }
+            // for(const auto& nalu : nalus)
+            // {
+            //     std::cout << "  " << nalu << std::endl;
+            //     assert(nalu);
+            // }
 
             write_to_file<uint64_t>(capture_file, c.m_timestamp);
             write_to_file<uint32_t>(capture_file, c.m_size);

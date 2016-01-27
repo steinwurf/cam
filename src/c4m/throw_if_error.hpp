@@ -28,7 +28,8 @@ namespace c4m
 
     public:
 
-        // Avoid name hiding. For more information about name hiding see:
+        // Avoid name hiding of the functions that take an error_code
+        // argument. For more information about name hiding see:
         // http://www.stroustrup.com/bs_faq2.html#overloadderived
         using Super::open;
         using Super::request_resolution;

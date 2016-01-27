@@ -33,7 +33,7 @@ namespace linux
                 continue;
 
             // check if camera has h264 capablities
-            c4m::linux::camera2 cc;
+            c4m::linux::camera2<c4m::default_features> cc;
 
             std::error_code error;
             cc.open(camera_file.c_str(), error);

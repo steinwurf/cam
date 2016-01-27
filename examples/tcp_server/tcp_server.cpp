@@ -59,7 +59,7 @@ private:
 
     void do_stream(ba::ip::tcp::socket client)
     {
-         c4m::linux::camera2 camera;
+         c4m::linux::camera2<c4m::default_features> camera;
          camera.open("/dev/video1");
 
          std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
@@ -156,7 +156,7 @@ private:
 
     void do_stream(ba::ip::tcp::socket client)
     {
-         c4m::linux::camera2 camera;
+         c4m::linux::camera2<c4m::default_features> camera;
          camera.open(m_camera.c_str());
 
          std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;

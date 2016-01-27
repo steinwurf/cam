@@ -43,6 +43,11 @@ def resolve(ctx):
         git_repository='bitbucket.org/steinwurf/n4lu.git',
         major=1))
 
+    ctx.add_dependency(resolve.ResolveVersion(
+        name='meta',
+        git_repository='github.com/steinwurf/meta.git',
+        major=2))
+
     # Internal dependencies
     if ctx.is_toplevel():
 
@@ -75,7 +80,8 @@ def build(bld):
 
     bld(#includes=['src'],
         export_includes=['src'],
-        name='c4m_includes')
+        name='c4m_includes',
+        use=['meta_includes'])
 
 
     if bld.is_toplevel():
