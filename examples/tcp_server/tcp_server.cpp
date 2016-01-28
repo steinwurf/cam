@@ -120,12 +120,6 @@ private:
             {
                 std::cerr << "Exception: " << e.what() << "\n";
             }
-
-            static int i = 0;
-            ++i;
-
-            if (i > 2)
-                return;
         }
     }
 
@@ -239,12 +233,6 @@ private:
             {
                 std::cerr << "Exception: " << e.what() << "\n";
             }
-
-            static int i = 0;
-            ++i;
-
-            if (i > 2)
-                return;
         }
     }
 
