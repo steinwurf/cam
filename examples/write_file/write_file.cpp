@@ -264,8 +264,8 @@ void write_custom_capture_v2(const char* device, const char* filename)
         c4m::set_trace_callback(camera,
             [](const std::string& zone, const std::string& msg)
             {
-                if (zone == "capture_layer")
-                    return;
+                //if (zone == "capture_layer")
+                //    return;
 
                 std::cout << zone << ":\n" << msg << std::endl;
             });
@@ -291,7 +291,7 @@ void write_custom_capture_v2(const char* device, const char* filename)
     camera.start_streaming();
 
     uint32_t frames = 0;
-    while(frames < 500)
+    while(frames < 100)
     {
         auto data = camera.capture();
         assert(data);
