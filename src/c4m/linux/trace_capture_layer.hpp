@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <sstream>
 
 #include <n4lu/to_annex_b_nalus.hpp>
 

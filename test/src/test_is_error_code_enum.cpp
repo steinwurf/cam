@@ -5,15 +5,7 @@
 // The copyright notice above does not evidence any
 // actual or intended publication of such source code.
 
-#pragma once
+#include <c4m/is_error_code_enum.hpp>
 
-#include <system_error>
-
-#include "error.hpp"
-
-namespace std
-{
-    /// Reference: http://bit.ly/1RCq7ts
-    template <>
-    struct is_error_code_enum<c4m::error> : public true_type {};
-}
+/// @file test_is_error_code_enum.hpp Nothing to test here
+///       is_error_code_enum is just a template specialization trait.

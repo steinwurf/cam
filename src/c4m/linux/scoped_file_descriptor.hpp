@@ -16,9 +16,21 @@ namespace c4m
 {
 namespace linux
 {
+    struct close_policy
+    {
+        void close(int file_descriptor)
+        {
+            assert(file_descriptor >= 0);
+            auto ok = ::close(file_descriptor);
+            assert(ok == 0);
+        }
+
+    };
+
     /// RAII (Resource Allocation Is Initialization) wrapper for a file
     /// descriptor. Ensures that the file descriptor gets closed.
-   class scoped_file_descriptor
+    //template<class ClosePolicy = close_policy>
+    class scoped_file_descriptor
     {
     public:
 

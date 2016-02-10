@@ -5,15 +5,6 @@
 // The copyright notice above does not evidence any
 // actual or intended publication of such source code.
 
-#pragma once
+#include <c4m/error.hpp>
 
-#include <system_error>
-
-#include "error.hpp"
-
-namespace std
-{
-    /// Reference: http://bit.ly/1RCq7ts
-    template <>
-    struct is_error_code_enum<c4m::error> : public true_type {};
-}
+/// @file test_error.cpp Nothing to test here error is just an enum class

@@ -61,6 +61,24 @@ def configure(conf):
 
     conf.load("wurf_common_tools")
 
+    if conf.is_mkspec_platform('linux'):
+
+        errmsg = """not found, is available in the following packages:
+
+            Debian/Ubuntu: apt-get install libudev-dev
+            Fedora/CentOS: yum install systemd-devel
+        """
+
+        conf.check_cxx(header_name='libudev.h', errmsg=errmsg)
+
+        if not conf.env['LIB_UDEV']:
+            conf.check_cxx(lib='udev')
+
+        errmsg = """not found, is available in the following packages:
+
+            Debian/Ubuntu: apt-get install libv4l-dev
+        """
+        conf.check_cxx(header_name='linux/videodev2.h', errmsg=errmsg)
 
 def build(bld):
 
@@ -68,7 +86,7 @@ def build(bld):
 
     bld.env.append_unique(
         'DEFINES_STEINWURF_VERSION',
-        'STEINWURF_NETC4M_VERSION="{}"'.format(
+        'STEINWURF_C4M_VERSION="{}"'.format(
             VERSION))
 
     # bld.program(
@@ -81,7 +99,7 @@ def build(bld):
     bld(#includes=['src'],
         export_includes=['src'],
         name='c4m_includes',
-        use=['meta_includes'])
+        use=['meta_includes', 'UDEV'])
 
 
     if bld.is_toplevel():
@@ -92,3 +110,4 @@ def build(bld):
         bld.recurse('examples/tcp_server')
         bld.recurse('examples/tcp_client')
         bld.recurse('examples/write_file')
+        bld.recurse('examples/uvc_test')

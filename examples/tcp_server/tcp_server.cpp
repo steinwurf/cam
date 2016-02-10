@@ -60,12 +60,12 @@ private:
     void do_stream(ba::ip::tcp::socket client)
     {
          c4m::linux::camera2<c4m::default_features> camera;
-         camera.open("/dev/video1");
+         camera.try_open("/dev/video1");
 
          std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
          std::cout << "Requesting resolution: " << std::endl;
-         camera.request_resolution(400,500);
+         camera.try_request_resolution(400,500);
          std::cout << "w = " << camera.width() << " "
                    << "h = " << camera.height() << std::endl;
 
@@ -73,13 +73,13 @@ private:
          write_to_socket<uint32_t>(client, camera.width());
          write_to_socket<uint32_t>(client, camera.height());
 
-         camera.start_streaming();
+         camera.try_start_streaming();
 
          // Counts the number of NALUs
          uint32_t nalu_count = 0;
          while(1)
          {
-             auto data = camera.capture();
+             auto data = camera.try_capture();
              assert(data);
 
              std::cout << data << std::endl;
@@ -151,12 +151,12 @@ private:
     void do_stream(ba::ip::tcp::socket client)
     {
          c4m::linux::camera2<c4m::default_features> camera;
-         camera.open(m_camera.c_str());
+         camera.try_open(m_camera.c_str());
 
          std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
          std::cout << "Requesting resolution: " << std::endl;
-         camera.request_resolution(400,500);
+         camera.try_request_resolution(400,500);
          std::cout << "w = " << camera.width() << " "
                    << "h = " << camera.height() << std::endl;
 
@@ -168,13 +168,13 @@ private:
          write_to_socket<uint32_t>(client, camera.width());
          write_to_socket<uint32_t>(client, camera.height());
 
-         camera.start_streaming();
+         camera.try_start_streaming();
 
          // Counts the number of NALUs
          uint32_t frames = 0;
-         while(1)
+         while (1)
          {
-             auto data = camera.capture();
+             auto data = camera.try_capture();
              assert(data);
 
              uint32_t diff_timestamp = data.m_timestamp - previous_timestamp;

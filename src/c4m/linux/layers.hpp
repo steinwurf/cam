@@ -17,6 +17,10 @@
 
 #include <linux/uvcvideo.h>
 #include <linux/usb/video.h>
+#include <sys/stat.h>
+#include <libudev.h>
+
+#include <memory>
 
 namespace c4m
 {
@@ -32,6 +36,113 @@ namespace linux
     /// Defined in:
     ///    UVC 1.5 Class specification.pdf
     ///
+    /// Appendix A (p. 156)
+    ///
+    enum class usb_class_code
+    {
+        video = 0x0E
+    };
+
+    enum class usb_subclass_code
+    {
+        video_control = 0x01
+    };
+
+    enum class usb_class_specific_type
+    {
+        interface = 0x24
+    };
+
+    enum class usb_class_specific_subtype
+    {
+        extension_unit = 0x06
+    };
+
+
+    // Next up http://www.linux-usb.org/USB-guide/x75.html
+    template<class Super>
+    class create_udev_device : public Super
+    {
+    private:
+
+        /// Small helper struct that is used as a custom deletor for the
+        /// unique_ptr holding the pointer to udev. When the unique_ptr
+        /// goes out of scope the operator gets invoked which then unref's
+        /// the udev pointer.
+        struct unreference
+        {
+            void operator()(udev* dev)
+            {
+                assert(dev);
+                auto ok = udev_unref(dev);
+                assert(ok == nullptr);
+            }
+
+            void operator()(udev_device* dev)
+            {
+                assert(dev);
+                auto ok = udev_device_unref(dev);
+                assert(ok == nullptr);
+            }
+        };
+
+
+    public:
+
+        void open(const char* device, std::error_code& error)
+        {
+            assert(device);
+            assert(!error);
+
+            m_udev = std::unique_ptr<udev, unreference>(udev_new());
+
+            if (!m_udev)
+            {
+                assert(0); // <--- replace with error
+                return;
+            }
+
+            // Get the device number
+            struct stat stat_buffer;
+
+            if (stat(device, &stat_buffer) != 0)
+            {
+                assert(0); // <--- replace with error
+                return;
+            }
+
+
+            if (S_ISBLK (stat_buffer.st_mode))
+            {
+                m_udev_device = std::unique_ptr<udev_device, unreference>(
+                    udev_device_new_from_devnum(m_udev.get(), 'b',
+                                                stat_buffer.st_rdev));
+            }
+            else if (S_ISCHR(stat_buffer.st_mode))
+            {
+                m_udev_device = std::unique_ptr<udev_device, unreference>(
+                    udev_device_new_from_devnum(m_udev.get(), 'c',
+                                                stat_buffer.st_rdev));
+            }
+
+            if (!m_udev_device)
+            {
+                assert(0);
+                return;
+            }
+
+
+
+
+        }
+
+    private:
+
+        std::unique_ptr<udev, unreference> m_udev;
+        std::unique_ptr<udev_device, unreference> m_udev_device;
+
+    };
+
 
     /// UVCX Video Config struct is used for probing and to config a
     /// specific configuration
@@ -79,7 +190,7 @@ namespace linux
     inline std::ostream&
     operator<<(std::ostream& os, const uvcx_video_config& config)
     {
-        os << "n4lu::annex_b_nalu: "
+        os << "c4m::linux::uvcx_video_config: "
            << "m_frame_interval = " << config.m_frame_interval << " "
            << "m_bitrate = " << config.m_bitrate << " "
            << "m_hints = " << config.m_hints << " "
@@ -109,7 +220,7 @@ namespace linux
         {
             // https://cgit.freedesktop.org/gstreamer/gst-plugins-bad/tree/sys/uvch264/gstuvch264_src.c
             assert(!error);
-            uvcx_video_config_probe_commit_t probe;
+            // uvcx_video_config_probe_commit_t probe;
 
 
         }
