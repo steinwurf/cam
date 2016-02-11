@@ -13,8 +13,9 @@ int run_uvc(int argc, char* argv[])
     (void) argv;
 
     using stack = c4m::throw_if_error_layer<
+        c4m::linux::create_usb_device<
         c4m::linux::create_udev_device<
-        c4m::linux::final_layer2>>;
+        c4m::linux::final_layer2>>>;
 
     stack s;
 

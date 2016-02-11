@@ -86,6 +86,8 @@ def configure(conf):
         """
         conf.check_cxx(header_name='libusb-1.0/libusb.h', errmsg=errmsg)
 
+        if not conf.env['LIB_USB-1.0']:
+            conf.check_cxx(lib='usb-1.0')
 
 
 def build(bld):
@@ -107,7 +109,7 @@ def build(bld):
     bld(#includes=['src'],
         export_includes=['src'],
         name='c4m_includes',
-        use=['meta_includes', 'UDEV'])
+        use=['meta_includes', 'UDEV', 'USB-1.0'])
 
 
     if bld.is_toplevel():

@@ -223,6 +223,27 @@ namespace linux
 
         };
 
+        struct scoped_device_list
+        {
+            scoped_device_list(libusb_device** device_list)
+                : m_device_list(device_list)
+            { }
+
+            ~scoped_device_list()
+            {
+                if (m_device_list)
+                {
+                    // Free the list and unref all devices contained
+                    libusb_free_device_list(m_device_list, 1);
+                }
+            }
+
+            scoped_device_list(const scoped_device_list&) = delete;
+            scoped_device_list& operator=(const scoped_device_list&) = delete;
+
+            libusb_device** m_device_list = nullptr;
+        };
+
     public:
 
         void open(const char* device, std::error_code& error)
@@ -236,11 +257,36 @@ namespace linux
                 return;
 
             libusb_context* context;
+            if (libusb_init(&context) != 0)
+            {
+                assert(0);
+                return;
+            }
 
-            if (libusb
+            // Pass ownership of the pointer to the unique_ptr
+            auto context_ptr = std::unique_ptr<libusb_context, unreference>(
+                context);
+
+            libusb_device** device_list = nullptr;
+
+            auto device_count = libusb_get_device_list(context, &device_list);
+            if (device_count < 0)
+            {
+                assert(0);
+                return;
+            }
+
+            scoped_device_list raii_device_list(device_list);
+
+            // libusb_device* device;
+            for (int i = 0; i < device_count; ++i)
+            {
+            }
+
+
+
 
         }
-
     };
 
 
