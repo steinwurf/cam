@@ -80,6 +80,14 @@ def configure(conf):
         """
         conf.check_cxx(header_name='linux/videodev2.h', errmsg=errmsg)
 
+        errmsg = """not found, is available in the following packages:
+
+            Debian/Ubuntu: apt-get install libusb-1.0-0-dev
+        """
+        conf.check_cxx(header_name='libusb-1.0/libusb.h', errmsg=errmsg)
+
+
+
 def build(bld):
 
     bld.load("wurf_common_tools")

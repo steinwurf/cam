@@ -1,0 +1,8 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+bld.program(features='cxx',
+            source='uvc_test.cpp',
+            target='uvc_test',
+            use=['boost_includes', 'boost_system', 'c4m_includes',
+                 'sak_includes', 'n4lu_includes'])

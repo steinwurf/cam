@@ -20,6 +20,8 @@
 #include <sys/stat.h>
 #include <libudev.h>
 
+#include <libusb-1.0/libusb.h>
+
 #include <memory>
 
 namespace c4m
@@ -94,9 +96,9 @@ namespace linux
             assert(device);
             assert(!error);
 
-            m_udev = std::unique_ptr<udev, unreference>(udev_new());
+            auto udev_ptr = std::unique_ptr<udev, unreference>(udev_new());
 
-            if (!m_udev)
+            if (!udev_ptr)
             {
                 assert(0); // <--- replace with error
                 return;
@@ -111,35 +113,133 @@ namespace linux
                 return;
             }
 
+            std::unique_ptr<udev_device, unreference> udev_device_ptr;
 
             if (S_ISBLK (stat_buffer.st_mode))
             {
-                m_udev_device = std::unique_ptr<udev_device, unreference>(
-                    udev_device_new_from_devnum(m_udev.get(), 'b',
+                udev_device_ptr = std::unique_ptr<udev_device, unreference>(
+                    udev_device_new_from_devnum(udev_ptr.get(), 'b',
                                                 stat_buffer.st_rdev));
             }
             else if (S_ISCHR(stat_buffer.st_mode))
             {
-                m_udev_device = std::unique_ptr<udev_device, unreference>(
-                    udev_device_new_from_devnum(m_udev.get(), 'c',
+                udev_device_ptr = std::unique_ptr<udev_device, unreference>(
+                    udev_device_new_from_devnum(udev_ptr.get(), 'c',
                                                 stat_buffer.st_rdev));
             }
 
-            if (!m_udev_device)
+            if (!udev_device_ptr)
             {
                 assert(0);
                 return;
             }
 
+            // Life time of returned parent is tied to the m_udev_device
+            // according to the documentation of the
+            // udev_device_get_parent_xxxx(...) function
+            udev_device* parent = udev_device_get_parent_with_subsystem_devtype(
+                udev_device_ptr.get(), "usb", "usb_device");
 
+            if (parent == nullptr)
+            {
+                assert(0);
+                return;
+            }
+
+            uint64_t bus_number = get_sysattr_value(parent, "busnum", error);
+
+            if (error)
+                return;
+
+            uint64_t dev_number = get_sysattr_value(parent, "devnum", error);
+
+            if (error)
+                return;
+
+            std::cout << "bus = " << bus_number << " dev = " << dev_number
+                      << std::endl;
+
+            m_bus_number = bus_number;
+            m_dev_number = dev_number;
 
 
         }
 
+        uint64_t bus_number() const
+        {
+            return m_bus_number;
+        }
+
+        uint64_t dev_number() const
+        {
+            return dev_number;
+        }
+
     private:
 
-        std::unique_ptr<udev, unreference> m_udev;
-        std::unique_ptr<udev_device, unreference> m_udev_device;
+        uint64_t get_sysattr_value(udev_device* device, const char* name,
+                                   std::error_code& error)
+        {
+            assert(device != nullptr);
+            assert(name != nullptr);
+
+            const char* value = udev_device_get_sysattr_value(
+                device, name);
+
+            if (value == nullptr)
+            {
+                assert(0);
+                return 0;
+            }
+
+            return atol(value);
+        }
+
+
+    private:
+
+        uint64_t m_bus_number;
+        uint64_t m_dev_number;
+
+    };
+
+
+    template<class Super>
+    class create_usb_device : public Super
+    {
+    private:
+
+        /// Small helper struct that is used as a custom deletor for the
+        /// unique_ptr holding the pointer to udev. When the unique_ptr
+        /// goes out of scope the operator gets invoked which then unref's
+        /// the udev pointer.
+        struct unreference
+        {
+            void operator()(libusb_context* context)
+            {
+                assert(context);
+                libusb_exit(context);
+            }
+
+        };
+
+    public:
+
+        void open(const char* device, std::error_code& error)
+        {
+            assert(device);
+            assert(!error);
+
+            Super::open(device, error);
+
+            if (error)
+                return;
+
+            libusb_context* context;
+
+            if (libusb
+
+        }
 
     };
 
