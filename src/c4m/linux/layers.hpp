@@ -172,7 +172,7 @@ namespace linux
 
         uint64_t dev_number() const
         {
-            return dev_number;
+            return m_dev_number;
         }
 
     private:
@@ -221,6 +221,12 @@ namespace linux
                 libusb_exit(context);
             }
 
+            void operator()(libusb_device* device)
+            {
+                assert(device);
+                libusb_unref_device(device);
+            }
+
         };
 
         struct scoped_device_list
@@ -243,6 +249,47 @@ namespace linux
 
             libusb_device** m_device_list = nullptr;
         };
+
+        struct scoped_config_descriptor
+        {
+            scoped_config_descriptor(libusb_device* device, uint8_t index,
+                                     std::error_code& error)
+            {
+                assert(device);
+                if (libusb_get_config_descriptor(device, index, &m_config) != 0)
+                {
+                    assert(0);
+                    assert(m_config == nullptr);
+                    return;
+                }
+            }
+
+            ~scoped_config_descriptor()
+            {
+                if (m_config)
+                {
+                    libusb_free_config_descriptor(m_config);
+                }
+            }
+
+            libusb_config_descriptor* m_config = nullptr;
+        };
+
+
+        libusb_config_descriptor* get_config_descriptor(
+            libusb_device* device, uint8_t index, std::error_code& error)
+        {
+            assert(device);
+            assert(!error);
+
+            libusb_config_descriptor* config;
+            if (libusb_get_config_descriptor(device, index, &config) != 0)
+            {
+                assert(0);
+                assert(m_config == nullptr);
+                return n;
+            }
+        }
 
     public:
 
@@ -278,12 +325,64 @@ namespace linux
 
             scoped_device_list raii_device_list(device_list);
 
+            std::unique_ptr<libusb_device, unreference> usb_device;
+
             // libusb_device* device;
             for (int i = 0; i < device_count; ++i)
             {
+                auto dev = device_list[i];
+
+                if (Super::bus_number() != libusb_get_bus_number(dev))
+                    continue;
+
+                if (Super::dev_number() != libusb_get_device_address(dev))
+                    continue;
+
+                usb_device = std::unique_ptr<libusb_device, unreference>(
+                    libusb_ref_device(device_list[i]));
+
+                break;
             }
 
+            if (!usb_device)
+            {
+                assert(0);
+                return;
+            }
 
+            std::cout << "Device found" << std::endl;
+
+            libusb_device_descriptor descriptor;
+
+            if (libusb_get_device_descriptor(
+                    usb_device.get(), &descriptor) != 0)
+            {
+                assert(0);
+                return;
+            }
+
+            std::cout << "Descriptor" << std::endl;
+
+            for (uint32_t i = 0; i < descriptor.bNumConfigurations; ++i)
+            {
+                scoped_config_descriptor config(usb_device.get(), i, error);
+
+                if (error)
+                {
+                    return;
+                }
+
+                // for (uint32_t j = 0; j < config->bNumInterfaces; ++j)
+                // {
+                //     for (uint32_t k = 0; k < config->interface[j].num_altsetting; ++k)
+                //     {
+                //         const libusb_interface_descriptor* interface;
+                //         interface = &config->interface[j].altsetting[k];
+                //         const uint8_t* ptr;
+                //     }
+
+                // }
+            }
 
 
         }
