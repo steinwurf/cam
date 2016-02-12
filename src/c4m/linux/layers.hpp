@@ -28,6 +28,15 @@ namespace c4m
 {
 namespace linux
 {
+    typedef struct
+    {
+        int8_t bLength;
+        int8_t bDescriptorType;
+        int8_t bDescriptorSubType;
+        int8_t bUnitID;
+        uint8_t guidExtensionCode[16];
+    } __attribute__ ((__packed__)) xu_descriptor;
+
     /// Development docs:
     /// http://www.usb.org/developers/docs/devclass_docs/USB_Video_Class_1_5.zip
     ///
@@ -227,53 +236,53 @@ namespace linux
                 libusb_unref_device(device);
             }
 
+            void operator()(libusb_config_descriptor* config)
+            {
+                assert(config);
+                libusb_free_config_descriptor(config);
+            }
+
+            void operator()(libusb_device** device_list)
+            {
+                assert(device_list);
+
+                // Free the list and unref all devices contained
+                libusb_free_device_list(device_list, 1);
+
+            }
+
+
         };
 
-        struct scoped_device_list
+
+        libusb_context* get_context(std::error_code& error)
         {
-            scoped_device_list(libusb_device** device_list)
-                : m_device_list(device_list)
-            { }
+            assert(!error);
+            libusb_context* context;
 
-            ~scoped_device_list()
+            if (libusb_init(&context) != 0)
             {
-                if (m_device_list)
-                {
-                    // Free the list and unref all devices contained
-                    libusb_free_device_list(m_device_list, 1);
-                }
+                assert(0);
+                return nullptr;
             }
+            return context;
+        }
 
-            scoped_device_list(const scoped_device_list&) = delete;
-            scoped_device_list& operator=(const scoped_device_list&) = delete;
-
-            libusb_device** m_device_list = nullptr;
-        };
-
-        struct scoped_config_descriptor
+        libusb_device** get_device_list(libusb_context* context,
+                                        ssize_t& device_count,
+                                        std::error_code& error)
         {
-            scoped_config_descriptor(libusb_device* device, uint8_t index,
-                                     std::error_code& error)
+            libusb_device** device_list = nullptr;
+
+            device_count = libusb_get_device_list(context, &device_list);
+            if (device_count < 0)
             {
-                assert(device);
-                if (libusb_get_config_descriptor(device, index, &m_config) != 0)
-                {
-                    assert(0);
-                    assert(m_config == nullptr);
-                    return;
-                }
+                assert(0);
+                return nullptr;
             }
 
-            ~scoped_config_descriptor()
-            {
-                if (m_config)
-                {
-                    libusb_free_config_descriptor(m_config);
-                }
-            }
-
-            libusb_config_descriptor* m_config = nullptr;
-        };
+            return device_list;
+        }
 
 
         libusb_config_descriptor* get_config_descriptor(
@@ -286,10 +295,32 @@ namespace linux
             if (libusb_get_config_descriptor(device, index, &config) != 0)
             {
                 assert(0);
-                assert(m_config == nullptr);
-                return n;
+                assert(config == nullptr);
+                return nullptr;
             }
+
+            return config;
         }
+
+        // uint8_t find_unit_in_configurations(libusb_device_descriptor& device,
+        //                                     std::error_code& error)
+        // {
+        //     using unique_config =
+        //         std::unique_ptr<libusb_config_descriptor, unreference>;
+
+        //     for (uint32_t i = 0; i < descriptor.bNumConfigurations; ++i)
+        //     {
+        //         auto config = unique_config(
+        //             get_config_descriptor(usb_device.get(), i, error));
+
+        //         if (error)
+        //             return;
+
+        //         assert(config);
+
+        //         find_unit_in_interfaces
+
+        // }
 
     public:
 
@@ -303,44 +334,42 @@ namespace linux
             if (error)
                 return;
 
-            libusb_context* context;
-            if (libusb_init(&context) != 0)
-            {
-                assert(0);
+            auto context = std::unique_ptr<libusb_context, unreference>(
+                get_context(error));
+
+            if (error)
                 return;
-            }
 
-            // Pass ownership of the pointer to the unique_ptr
-            auto context_ptr = std::unique_ptr<libusb_context, unreference>(
-                context);
+            assert(context);
 
-            libusb_device** device_list = nullptr;
+            ssize_t device_count = 0;
 
-            auto device_count = libusb_get_device_list(context, &device_list);
-            if (device_count < 0)
-            {
-                assert(0);
+            auto device_list = std::unique_ptr<libusb_device*, unreference>(
+                get_device_list(context.get(), device_count, error));
+
+            if (error)
                 return;
-            }
 
-            scoped_device_list raii_device_list(device_list);
+            assert(device_list);
 
             std::unique_ptr<libusb_device, unreference> usb_device;
 
             // libusb_device* device;
             for (int i = 0; i < device_count; ++i)
             {
-                auto dev = device_list[i];
+                auto d = device_list.get()[i];
+                assert(d);
 
-                if (Super::bus_number() != libusb_get_bus_number(dev))
+                if (Super::bus_number() != libusb_get_bus_number(d))
                     continue;
 
-                if (Super::dev_number() != libusb_get_device_address(dev))
+                if (Super::dev_number() != libusb_get_device_address(d))
                     continue;
 
                 usb_device = std::unique_ptr<libusb_device, unreference>(
-                    libusb_ref_device(device_list[i]));
+                    libusb_ref_device(d));
 
+                assert(usb_device);
                 break;
             }
 
@@ -365,27 +394,75 @@ namespace linux
 
             for (uint32_t i = 0; i < descriptor.bNumConfigurations; ++i)
             {
-                scoped_config_descriptor config(usb_device.get(), i, error);
+                auto config = std::unique_ptr<libusb_config_descriptor, unreference>(
+                    get_config_descriptor(usb_device.get(), i, error));
 
                 if (error)
-                {
                     return;
+
+                assert(config);
+
+                for (uint32_t j = 0; j < config->bNumInterfaces; ++j)
+                {
+                    for (uint32_t k = 0; k < config->interface[j].num_altsetting; ++k)
+                    {
+                        const libusb_interface_descriptor* interface;
+                        interface = &config->interface[j].altsetting[k];
+
+                        if (interface->bInterfaceClass != (int)usb_class_code::video)
+                            continue;
+
+                        if (interface->bInterfaceSubClass !=
+                            (int)usb_subclass_code::video_control)
+                            continue;
+
+                        std::cout << "So far so good" << std::endl;
+
+                        const uint8_t* ptr = interface->extra;
+
+                        while(ptr - interface->extra +
+                              sizeof(xu_descriptor) < interface->extra_length)
+                        {
+
+                            xu_descriptor *desc = (xu_descriptor *) ptr;
+
+                            if (desc->bDescriptorType ==
+                                (int8_t) usb_class_specific_type::interface &&
+                                desc->bDescriptorSubType ==
+                                (int8_t) usb_class_specific_subtype::extension_unit)
+                            {
+
+                                uint8_t guid[] = {0x41, 0x76, 0x9e, 0xa2, 0x04, 0xde, 0xe3, 0x47, 0x8b, 0x2b, 0xF4, 0x34, 0x1A, 0xFF, 0x00, 0x3B};
+
+                                if (memcmp(desc->guidExtensionCode, guid, 15) == 0)
+                                {
+                                    std::cout << "Foudn it = "
+                                              << (uint32_t) desc->bUnitID << std::endl;
+                                    m_unit_id = desc->bUnitID;
+                                }
+                                else
+                                {
+                                    std::cout << "Close but no cigar" << std::endl;
+                                }
+
+
+                            }
+
+                            std::cout << "Getting warmer" << std::endl;
+                            ptr += desc->bLength;
+                        }
+                    }
+
                 }
-
-                // for (uint32_t j = 0; j < config->bNumInterfaces; ++j)
-                // {
-                //     for (uint32_t k = 0; k < config->interface[j].num_altsetting; ++k)
-                //     {
-                //         const libusb_interface_descriptor* interface;
-                //         interface = &config->interface[j].altsetting[k];
-                //         const uint8_t* ptr;
-                //     }
-
-                // }
             }
 
 
         }
+
+    private:
+
+        uint8_t m_unit_id;
+
     };
 
 
