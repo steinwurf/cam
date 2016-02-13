@@ -53,16 +53,23 @@ void write_raw_capture(const char* device, const char* filename)
     std::cout << "Raw capture file: " << filename << std::endl;
     std::cout << "Device: " << device << std::endl;
 
-    c4m::linux::camera2<c4m::default_features> camera;
+    using features = c4m::default_features::
+        append<c4m::enable_trace>;
+
+    c4m::linux::camera2<features> camera;
+    camera.set_trace_stdout();
     camera.try_open(device);
 
     std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
-    std::cout << "Requesting resolution: " << std::endl;
-    camera.try_request_resolution(400,500);
-    std::cout << "w = " << camera.width() << " "
-              << "h = " << camera.height() << std::endl;
+    //std::cout << "Requesting resolution: " << std::endl;
+    //camera.try_request_resolution(400,500);
+    //std::cout << "w = " << camera.width() << " "
+    //          << "h = " << camera.height() << std::endl;
+    std::error_code error;
+    camera.config_query(error);
 
+    std::cout << "START STREAMING" << std::endl;
     camera.try_start_streaming();
 
     uint32_t frames = 0;
@@ -70,6 +77,18 @@ void write_raw_capture(const char* device, const char* filename)
     {
         auto data = camera.try_capture();
         std::cout << data << std::endl;
+
+        if (frames == 100)
+        {
+            camera.set_bitrates(100000,100000, error);
+            assert(!error);
+        }
+
+        if (frames == 200)
+        {
+            camera.set_bitrates(50000,50000, error);
+            assert(!error);
+        }
 
         capture_file.write((const char*) data.m_data, data.m_size);
 
@@ -353,8 +372,8 @@ int main(int argc, char* argv[])
 
     try
     {
-        // write_raw_capture(camera_file.c_str(), "raw_capture.h264");
-        write_custom_capture_v2(camera_file.c_str(), "custom_capture_v2.h264");
+        write_raw_capture(camera_file.c_str(), "raw_capture.h264");
+        // write_custom_capture_v2(camera_file.c_str(), "custom_capture_v2.h264");
     }
     catch (std::exception& e)
     {

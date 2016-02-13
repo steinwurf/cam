@@ -105,6 +105,11 @@ namespace linux
             assert(device);
             assert(!error);
 
+            Super::open(device, error);
+
+            if (error)
+                return;
+
             auto udev_ptr = std::unique_ptr<udev, unreference>(udev_new());
 
             if (!udev_ptr)
@@ -455,8 +460,12 @@ namespace linux
 
                 }
             }
+        }
 
 
+        uint8_t unit_id() const
+        {
+            return m_unit_id;
         }
 
     private:
@@ -465,6 +474,47 @@ namespace linux
 
     };
 
+
+    template<class Super>
+    class xu_query : public Super
+    {
+    public:
+
+        void query(uint8_t selector, uint8_t query, uint8_t* data,
+                   std::error_code& error)
+        {
+            assert(data);
+            assert(!error);
+
+            uvc_xu_control_query xu;
+            memset(&xu, 0, sizeof(xu));
+
+            uint16_t length = 0;
+
+            xu.unit = Super::unit_id();
+            xu.selector = selector;
+            xu.query = UVC_GET_LEN;
+            xu.size = sizeof(length);
+            xu.data = (uint8_t*) &length;
+
+            Super::retry_ioctl(UVCIOC_CTRL_QUERY, &xu, error);
+
+            if (error)
+                return;
+
+            if (query == UVC_GET_LEN)
+            {
+                *((uint16_t*)data) = length;
+                return;
+            }
+
+            xu.query = query;
+            xu.size = length;
+            xu.data = data;
+
+            Super::retry_ioctl(UVCIOC_CTRL_QUERY, &xu, error);
+        }
+    };
 
     /// UVCX Video Config struct is used for probing and to config a
     /// specific configuration
@@ -506,7 +556,7 @@ namespace linux
         uint8_t m_stream_id;
         uint8_t m_spatial_layer_ratio;
         uint16_t m_leaky_bucket_size;
-    };
+    } __attribute__((packed));
 
     // Output operator for the uvcx_video_config
     inline std::ostream&
@@ -534,31 +584,207 @@ namespace linux
 
 
     template<class Super>
-    class set_key_frame_interval : public Super
+    class xu_config_query : public Super
     {
     public:
 
+        void config_query(std::error_code& error)
+        {
+            uvcx_video_config config;
+            memset(&config, 0, sizeof(config));
+
+            Super::query(0x01, UVC_GET_CUR,
+                         (uint8_t*) &config, error);
+
+            if (error)
+            {
+                std::cout << "FUCK FUCK FUCK" << std::endl;
+                assert(0);
+                return;
+            }
+
+            std::cout << config << std::endl;
+
+            config.m_i_frame_period = 1000;
+            config.m_width = 800;
+            config.m_height = 600;
+
+            Super::query(0x01, UVC_SET_CUR,
+                         (uint8_t*) &config, error);
+
+            if (error)
+            {
+                std::cout << "FUCK FUCK FUCK 2 " << std::endl;
+                assert(0);
+                return;
+            }
+
+            Super::query(0x01, UVC_GET_CUR,
+                         (uint8_t*) &config, error);
+
+            if (error)
+            {
+                std::cout << "FUCK FUCK FUCK 3" << std::endl;
+                assert(0);
+                return;
+            }
+
+            std::cout << config << std::endl;
+
+            Super::query(0x02, UVC_SET_CUR, (uint8_t*) &config, error);
+
+            if (error)
+            {
+                std::cout << "FUCK FUCK FUCK 4" << std::endl;
+                assert(0);
+                return;
+            }
+        }
+    };
+
+    typedef struct _uvcx_bitrate_layers_t
+    {
+        uint16_t wLayerID;
+        uint32_t dwPeakBitrate;
+        uint32_t dwAverageBitrate;
+    } __attribute__((packed)) uvcx_bitrate_layers_t;
+
+    // Output operator for the uvcx_video_config
+    inline std::ostream&
+    operator<<(std::ostream& os, const uvcx_bitrate_layers_t& bitrates)
+    {
+        os << "c4m::linux::uvcx_bitrate_layers_t: "
+           << "wLayerID = " << bitrates.wLayerID << " "
+           << "dwPeakBitrate = " << bitrates.dwPeakBitrate << " "
+           << "dwAverageBitrate = " << bitrates.dwAverageBitrate << " ";
+
+        return os;
+    }
+
+    template<class Super>
+    class set_average_bitrate : public Super
+    {
+    public:
+        void set_bitrates(uint32_t average_bitrate, uint32_t peak_bitrate,
+                         std::error_code& error)
+        {
+             uvcx_bitrate_layers_t bitrates;
+             memset(&bitrates, 0, sizeof(bitrates));
+
+             Super::query(0x0E, UVC_GET_CUR, (uint8_t*) &bitrates, error);
+
+             if (error)
+             {
+                 std::cout << "YUCK YUCK" << std::endl;
+                 assert(0);
+                 return;
+             }
+
+             std::cout << bitrates << std::endl;
+
+             bitrates.dwPeakBitrate = peak_bitrate;
+             bitrates.dwAverageBitrate = average_bitrate;
+
+             Super::query(0x0E, UVC_SET_CUR, (uint8_t*) &bitrates, error);
+
+             if (error)
+             {
+                 std::cout << "YUCK YUCK 2" << std::endl;
+                 assert(0);
+                 return;
+             }
+
+             std::cout << bitrates << std::endl;
+        }
+    };
+
+
+    /// Fall-through case for the case where TraceTag is meta::not_found
+    template<class TraceTag, class Super>
+    class trace_buffer_queue_layer : public Super
+    {
+        static_assert(std::is_same<TraceTag, meta::not_found>::value,
+                      "Unexpected TraceTag should be meta::not_found in the "
+                      "fall-through case.");
+    };
+
+    template<class Super>
+    class trace_buffer_queue_layer<enable_trace, Super> : public Super
+    {
+    public:
+
+        /// Called to initialize memory
         void start_streaming(std::error_code& error)
         {
-            // https://cgit.freedesktop.org/gstreamer/gst-plugins-bad/tree/sys/uvch264/gstuvch264_src.c
             assert(!error);
-            // uvcx_video_config_probe_commit_t probe;
 
+            if (Super::is_trace_enabled())
+            {
+                Super::write_trace("buffer_queue_layer", "start_streaming");
+            }
 
+            Super::start_streaming(error);
         }
 
+        void stop_streaming(std::error_code& error)
+        {
+            assert(!error);
 
+            if (Super::is_trace_enabled())
+            {
+                Super::write_trace("buffer_queue_layer", "stop_streaming");
+            }
 
+            Super::stop_streaming(error);
+        }
+        void enqueue_buffer(uint32_t index, std::error_code& error)
+        {
+            assert(!error);
+
+            if (Super::is_trace_enabled())
+            {
+                std::stringstream ss;
+                ss << "enqueue_buffer: index=" << index;
+                Super::write_trace(
+                    "buffer_queue_layer", ss.str());
+            }
+
+            Super::enqueue_buffer(index, error);
+        }
+
+        v4l2_buffer dequeue_buffer(std::error_code& error)
+        {
+            assert(!error);
+            auto buffer = Super::dequeue_buffer(error);
+
+            if (Super::is_trace_enabled())
+            {
+                assert(!error);
+                std::stringstream ss;
+                ss << "dequeu_buffer: index=" << buffer.index;
+                Super::write_trace(
+                    "buffer_queue_layer", ss.str());
+            }
+            return buffer;
+        }
     };
+
+
+
 
     template<class Features>
     using camera2 =
         throw_if_error_layer<
-        set_key_frame_interval<
+        set_average_bitrate<
+        xu_config_query<
+        xu_query<
+        create_usb_device<
+        create_udev_device<
         zero_timestamp_at_initial_capture<
         trace_capture_layer<find_enable_trace<Features>,
         capture_layer<
         streaming_layer<
+        trace_buffer_queue_layer<find_enable_trace<Features>,
         buffer_queue_layer<
         memory_map_layer<
         set_h264_format_layer<
@@ -572,7 +798,7 @@ namespace linux
         ioctl_layer<
         open_layer2<
         trace_layer<find_enable_trace<Features>,
-        final_layer2>>>>>>>>>>>>>>>>>>>;
+            final_layer2>>>>>>>>>>>>>>>>>>>>>>>>;
 
 }
 }
