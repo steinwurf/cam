@@ -642,21 +642,21 @@ namespace linux
         }
     };
 
-    typedef struct _uvcx_bitrate_layers_t
+    struct uvcx_bitrate
     {
-        uint16_t wLayerID;
-        uint32_t dwPeakBitrate;
-        uint32_t dwAverageBitrate;
-    } __attribute__((packed)) uvcx_bitrate_layers_t;
+        uint16_t m_layer_id;
+        uint32_t m_peak_bitrate;
+        uint32_t m_average_bitrate;
+    } __attribute__((packed));
 
     // Output operator for the uvcx_video_config
     inline std::ostream&
-    operator<<(std::ostream& os, const uvcx_bitrate_layers_t& bitrates)
+    operator<<(std::ostream& os, const uvcx_bitrate& bitrates)
     {
-        os << "c4m::linux::uvcx_bitrate_layers_t: "
-           << "wLayerID = " << bitrates.wLayerID << " "
-           << "dwPeakBitrate = " << bitrates.dwPeakBitrate << " "
-           << "dwAverageBitrate = " << bitrates.dwAverageBitrate << " ";
+        os << "c4m::linux::uvcx_bitrate: "
+           << "m_layer_id = " << bitrates.m_layer_id << " "
+           << "m_peak_bitrate = " << bitrates.m_peak_bitrate << " "
+           << "m_average_bitrate = " << bitrates.m_average_bitrate << " ";
 
         return os;
     }
@@ -668,7 +668,7 @@ namespace linux
         void set_bitrates(uint32_t average_bitrate, uint32_t peak_bitrate,
                          std::error_code& error)
         {
-             uvcx_bitrate_layers_t bitrates;
+             uvcx_bitrate bitrates;
              memset(&bitrates, 0, sizeof(bitrates));
 
              Super::query(0x0E, UVC_GET_CUR, (uint8_t*) &bitrates, error);
@@ -682,8 +682,8 @@ namespace linux
 
              std::cout << bitrates << std::endl;
 
-             bitrates.dwPeakBitrate = peak_bitrate;
-             bitrates.dwAverageBitrate = average_bitrate;
+             bitrates.m_peak_bitrate = peak_bitrate;
+             bitrates.m_average_bitrate = average_bitrate;
 
              Super::query(0x0E, UVC_SET_CUR, (uint8_t*) &bitrates, error);
 

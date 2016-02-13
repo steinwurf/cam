@@ -90,6 +90,12 @@ void write_raw_capture(const char* device, const char* filename)
             assert(!error);
         }
 
+        if (frames == 300)
+        {
+            camera.set_bitrates(25000,25000, error);
+            assert(!error);
+        }
+
         capture_file.write((const char*) data.m_data, data.m_size);
 
         ++frames;
