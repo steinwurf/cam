@@ -13,6 +13,8 @@
 #include "../error_category.hpp"
 #include "../make_error_code.hpp"
 #include "../trace_layer.hpp"
+#include "../status_layer.hpp"
+#include "../update_status_layer.hpp"
 #include "trace_capture_layer.hpp"
 
 #include <linux/uvcvideo.h>
@@ -128,11 +130,15 @@ namespace linux
     ///
     /// lsusb -d 046d:082d -d to get a list of XU
     ///
+    /// The following is defined in:
+    ///     USB Device Class Definition for Video Devices: H.264 Payload.
+    ///     Revision: 1.00
+    ///     Appendix A (p. 43)
+    ///
     static const uint8_t guid[] = {0x41, 0x76, 0x9e, 0xa2,
                                    0x04, 0xde, 0xe3, 0x47,
                                    0x8b, 0x2b, 0xF4, 0x34,
                                    0x1A, 0xFF, 0x00, 0x3B};
-
 
     // Next up http://www.linux-usb.org/USB-guide/x75.html
     template<class Super>
@@ -649,60 +655,108 @@ namespace linux
     template<class Super>
     class xu_config_query : public Super
     {
+    private:
+
+        /// The following is defined in:
+        ///    USB Device Class Definition for Video Devices: H.264 Payload.
+        ///    Revision: 1.00
+        ///    Section "3.3 H.264 UVC Extensions Units (XUs)" (p. 11)
+        ///
+        enum class selector
+        {
+            uvcx_video_config_probe = 0x01,
+            uvcx_video_config_commit = 0x02
+        };
+
     public:
 
-        void config_query(std::error_code& error)
+        void open(const char* device, std::error_code& error)
         {
-            uvcx_video_config config;
-            memset(&config, 0, sizeof(config));
+            assert(device);
+            assert(!error);
 
-            Super::query(0x01, UVC_GET_CUR,
-                         (uint8_t*) &config, error);
-
-            if (error)
-            {
-                std::cout << "FUCK FUCK FUCK" << std::endl;
-                assert(0);
-                return;
-            }
-
-            std::cout << config << std::endl;
-
-            config.m_i_frame_period = 1000;
-            config.m_width = 800;
-            config.m_height = 600;
-
-            Super::query(0x01, UVC_SET_CUR,
-                         (uint8_t*) &config, error);
+            Super::open(device, error);
 
             if (error)
-            {
-                std::cout << "FUCK FUCK FUCK 2 " << std::endl;
-                assert(0);
                 return;
-            }
 
-            Super::query(0x01, UVC_GET_CUR,
-                         (uint8_t*) &config, error);
+            memset(&m_config, 0, sizeof(m_config));
 
-            if (error)
-            {
-                std::cout << "FUCK FUCK FUCK 3" << std::endl;
-                assert(0);
-                return;
-            }
-
-            std::cout << config << std::endl;
-
-            Super::query(0x02, UVC_SET_CUR, (uint8_t*) &config, error);
-
-            if (error)
-            {
-                std::cout << "FUCK FUCK FUCK 4" << std::endl;
-                assert(0);
-                return;
-            }
+            Super::query(
+                static_cast<uint8_t>(selector::uvcx_video_config_probe),
+                UVC_GET_CUR, reinterpret_cast<uint8_t*>(&m_config), error);
         }
+
+
+        void start_streaming(std::error_code& error)
+        {
+            assert(!error);
+
+            // No buffers should be allocated yet, we need to configure the
+            // encoder before we map memory etc. It is not a fact, but
+            // seems reasonable since the size of memory will depend on the
+            // chosen resolution etc.
+            assert(Super::buffer_count() == 0);
+
+            Super::query(
+                static_cast<uint8_t>(selector::uvcx_video_config_commit),
+                UVC_SET_CUR, reinterpret_cast<uint8_t*>(&m_config), error);
+
+            if (error)
+                return;
+
+            Super::start_streaming(error);
+        }
+
+        // uint32_t width() const
+        // {
+        //     return m_config.m_width;
+        // }
+
+        // uint32_t height() const
+        // {
+        //     return m_config.m_height;
+        // }
+
+        // void request_resolution(uint32_t width, uint32_t height,
+        //                         std::error_code& error)
+        // {
+        //     assert(!error);
+        //     assert(width > 0);
+        //     assert(height > 0);
+
+        //     std::cout << "request res" << std::endl;
+
+        //     m_config.m_width = width;
+        //     m_config.m_height = height;
+
+        //     Super::query(
+        //         static_cast<uint8_t>(selector::uvcx_video_config_probe),
+        //         UVC_SET_CUR, reinterpret_cast<uint8_t*>(&m_config), error);
+        // }
+
+        uint32_t i_frame_period() const
+        {
+            return m_config.m_i_frame_period;
+        }
+
+        void request_i_frame_period(uint32_t i_frame_period,
+                                    std::error_code& error)
+        {
+            assert(!error);
+
+            std::cout << "request iframe" << std::endl;
+
+            m_config.m_i_frame_period = i_frame_period;
+
+            Super::query(
+                static_cast<uint8_t>(selector::uvcx_video_config_probe),
+                UVC_SET_CUR, reinterpret_cast<uint8_t*>(&m_config), error);
+        }
+
+    private:
+
+        uvcx_video_config m_config;
     };
 
     struct uvcx_bitrate
@@ -728,8 +782,9 @@ namespace linux
     class set_average_bitrate : public Super
     {
     public:
-        void set_bitrates(uint32_t average_bitrate, uint32_t peak_bitrate,
-                         std::error_code& error)
+
+        void request_bitrates(uint32_t average_bitrate, uint32_t peak_bitrate,
+                              std::error_code& error)
         {
              uvcx_bitrate bitrates;
              memset(&bitrates, 0, sizeof(bitrates));
@@ -838,6 +893,7 @@ namespace linux
     template<class Features>
     using camera2 =
         throw_if_error_layer<
+        update_status_layer<
         set_average_bitrate<
         xu_config_query<
         xu_query<
@@ -861,7 +917,8 @@ namespace linux
         ioctl_layer<
         open_layer2<
         trace_layer<find_enable_trace<Features>,
-            final_layer2>>>>>>>>>>>>>>>>>>>>>>>>;
+        status_layer<
+            final_layer2>>>>>>>>>>>>>>>>>>>>>>>>>>;
 
 }
 }

@@ -31,7 +31,7 @@ int run_uvc(int argc, char* argv[])
     //s.try_open("/sys/class/video4linux/video1");
 
     std::error_code error;
-    s.config_query(error);
+    // s.config_query(error);
 
     return 0;
 }

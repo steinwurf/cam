@@ -49,6 +49,14 @@ namespace c4m
 
         }
 
+        void try_request_i_frame_period(uint32_t i_frame_period)
+        {
+            std::error_code error;
+            Super::request_i_frame_period(i_frame_period, error);
+
+            throw_if_error(error);
+        }
+
         void try_start_streaming()
         {
             std::error_code error;
