@@ -28,14 +28,31 @@ namespace c4m
 {
 namespace linux
 {
-    typedef struct
+    /// The extension unit descriptor.
+    ///
+    /// Defined in:
+    ///    UVC 1.5 Class specification.pdf
+    ///
+    /// Section 3.7.2.7 (p. 58)
+    ///
+    struct extension_unit_descriptor
     {
-        int8_t bLength;
-        int8_t bDescriptorType;
-        int8_t bDescriptorSubType;
-        int8_t bUnitID;
-        uint8_t guidExtensionCode[16];
-    } __attribute__ ((__packed__)) xu_descriptor;
+        // Size of this descriptor in bytes
+        int8_t m_length;
+
+        /// Constant of CS_INTERFACE descriptor type
+        int8_t m_descriptor_type;
+
+        /// Constant of VC_EXTENSION_UNIT descriptor subtype
+        int8_t m_descriptor_sub_type;
+
+        // Unique identifier for unit, this value must be passed with each
+        // request that is directed to the Extension Unit.
+        int8_t m_unit_id;
+
+        // Vendor specific code that further identifies the extension unit.
+        uint8_t m_guid_extension_code[16];
+    } __attribute__ ((__packed__));
 
     /// Development docs:
     /// http://www.usb.org/developers/docs/devclass_docs/USB_Video_Class_1_5.zip
@@ -68,6 +85,53 @@ namespace linux
     {
         extension_unit = 0x06
     };
+
+    /// Globally Unique Identifier (GUID) for the extension code.
+    ///
+    /// Note: The layout of the GUID is specified in USB_Video_FAQ_1.5.pdf
+    ///       (section "Layout of a GUID Data Structure" p. 15)
+    ///
+    /// Layout (and example):
+    ///
+    /// +-----------------------------------+
+    /// |offset|Field |Size (bytes)|Example |
+    /// +-----------------------------------+
+    /// |0     |Data1 |4           |47504a4d|
+    /// +-----------------------------------+
+    /// |4     |Data2 |2           |0000    |
+    /// +-----------------------------------+
+    /// |6     |Data3 |2           |0010    |
+    /// +-----------------------------------+
+    /// |8     |Data4a|1           |80      |
+    /// +-----------------------------------+
+    /// |9     |Data4b|1           |00      |
+    /// +-----------------------------------+
+    /// |10    |Data4c|1           |00      |
+    /// +-----------------------------------+
+    /// |11    |Data4d|1           |aa      |
+    /// +-----------------------------------+
+    /// |12    |Data4e|1           |00      |
+    /// +-----------------------------------+
+    /// |13    |Data4f|1           |38      |
+    /// +-----------------------------------+
+    /// |14    |Data4g|1           |9b      |
+    /// +-----------------------------------+
+    /// |15    |Data4h|1           |71      |
+    /// +-----------------------------------+
+    ///
+    /// In the example given in the table above the GUID
+    /// {47504a4d-0000-0010-80-00-00-aa-00-38-9b-71} will have the
+    /// following little-endian byte-stream representation:
+    ///
+    /// {0x4d,0x4a,0x50,0x47,0x00,0x00,0x10,0x00,
+    ///  0x80,0x00,0x00,0xaa,0x00,0x38,0x9b,0x71}
+    ///
+    /// lsusb -d 046d:082d -d to get a list of XU
+    ///
+    static const uint8_t guid[] = {0x41, 0x76, 0x9e, 0xa2,
+                                   0x04, 0xde, 0xe3, 0x47,
+                                   0x8b, 0x2b, 0xF4, 0x34,
+                                   0x1A, 0xFF, 0x00, 0x3B};
 
 
     // Next up http://www.linux-usb.org/USB-guide/x75.html
@@ -359,7 +423,6 @@ namespace linux
 
             std::unique_ptr<libusb_device, unreference> usb_device;
 
-            // libusb_device* device;
             for (int i = 0; i < device_count; ++i)
             {
                 auto d = device_list.get()[i];
@@ -426,24 +489,24 @@ namespace linux
                         const uint8_t* ptr = interface->extra;
 
                         while(ptr - interface->extra +
-                              sizeof(xu_descriptor) < interface->extra_length)
+                              sizeof(extension_unit_descriptor) < interface->extra_length)
                         {
 
-                            xu_descriptor *desc = (xu_descriptor *) ptr;
+                            auto* desc = (extension_unit_descriptor*) ptr;
 
-                            if (desc->bDescriptorType ==
+                            if (desc->m_descriptor_type ==
                                 (int8_t) usb_class_specific_type::interface &&
-                                desc->bDescriptorSubType ==
+                                desc->m_descriptor_sub_type ==
                                 (int8_t) usb_class_specific_subtype::extension_unit)
                             {
 
-                                uint8_t guid[] = {0x41, 0x76, 0x9e, 0xa2, 0x04, 0xde, 0xe3, 0x47, 0x8b, 0x2b, 0xF4, 0x34, 0x1A, 0xFF, 0x00, 0x3B};
 
-                                if (memcmp(desc->guidExtensionCode, guid, 15) == 0)
+
+                                if (memcmp(desc->m_guid_extension_code, guid, 15) == 0)
                                 {
                                     std::cout << "Foudn it = "
-                                              << (uint32_t) desc->bUnitID << std::endl;
-                                    m_unit_id = desc->bUnitID;
+                                              << (uint32_t) desc->m_unit_id << std::endl;
+                                    m_unit_id = desc->m_unit_id;
                                 }
                                 else
                                 {
@@ -454,7 +517,7 @@ namespace linux
                             }
 
                             std::cout << "Getting warmer" << std::endl;
-                            ptr += desc->bLength;
+                            ptr += desc->m_length;
                         }
                     }
 
