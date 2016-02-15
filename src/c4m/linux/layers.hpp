@@ -240,9 +240,6 @@ namespace linux
             if (error)
                 return;
 
-            std::cout << "bus = " << bus_number << " dev = " << dev_number
-                      << std::endl;
-
             m_bus_number = bus_number;
             m_dev_number = dev_number;
 
@@ -453,8 +450,6 @@ namespace linux
                 return;
             }
 
-            std::cout << "Device found" << std::endl;
-
             libusb_device_descriptor descriptor;
 
             if (libusb_get_device_descriptor(
@@ -464,12 +459,12 @@ namespace linux
                 return;
             }
 
-            std::cout << "Descriptor" << std::endl;
 
             for (uint32_t i = 0; i < descriptor.bNumConfigurations; ++i)
             {
-                auto config = std::unique_ptr<libusb_config_descriptor, unreference>(
-                    get_config_descriptor(usb_device.get(), i, error));
+                auto config =
+                    std::unique_ptr<libusb_config_descriptor, unreference>(
+                        get_config_descriptor(usb_device.get(), i, error));
 
                 if (error)
                     return;
@@ -478,51 +473,49 @@ namespace linux
 
                 for (uint32_t j = 0; j < config->bNumInterfaces; ++j)
                 {
-                    for (uint32_t k = 0; k < config->interface[j].num_altsetting; ++k)
+                    for (uint32_t k = 0;
+                         k < config->interface[j].num_altsetting; ++k)
                     {
                         const libusb_interface_descriptor* interface;
                         interface = &config->interface[j].altsetting[k];
 
-                        if (interface->bInterfaceClass != (int)usb_class_code::video)
+                        if (interface->bInterfaceClass !=
+                            (int)usb_class_code::video)
                             continue;
 
                         if (interface->bInterfaceSubClass !=
                             (int)usb_subclass_code::video_control)
                             continue;
 
-                        std::cout << "So far so good" << std::endl;
+
 
                         const uint8_t* ptr = interface->extra;
 
                         while(ptr - interface->extra +
-                              sizeof(extension_unit_descriptor) < interface->extra_length)
+                              sizeof(extension_unit_descriptor) <
+                              interface->extra_length)
                         {
 
                             auto* desc = (extension_unit_descriptor*) ptr;
 
                             if (desc->m_descriptor_type ==
-                                (int8_t) usb_class_specific_type::interface &&
+                                (int8_t)
+                                usb_class_specific_type::interface &&
                                 desc->m_descriptor_sub_type ==
-                                (int8_t) usb_class_specific_subtype::extension_unit)
+                                (int8_t)
+                                usb_class_specific_subtype::extension_unit)
                             {
 
 
 
-                                if (memcmp(desc->m_guid_extension_code, guid, 15) == 0)
+                                if (memcmp(desc->m_guid_extension_code,
+                                           guid, 15) == 0)
                                 {
-                                    std::cout << "Foudn it = "
-                                              << (uint32_t) desc->m_unit_id << std::endl;
                                     m_unit_id = desc->m_unit_id;
                                 }
-                                else
-                                {
-                                    std::cout << "Close but no cigar" << std::endl;
-                                }
-
 
                             }
 
-                            std::cout << "Getting warmer" << std::endl;
                             ptr += desc->m_length;
                         }
                     }
@@ -745,8 +738,6 @@ namespace linux
         {
             assert(!error);
 
-            std::cout << "request iframe" << std::endl;
-
             m_config.m_i_frame_period = i_frame_period;
 
             Super::query(
@@ -759,11 +750,23 @@ namespace linux
         uvcx_video_config m_config;
     };
 
+    /// The following is defined in:
+    ///     USB Device Class Definition for Video Devices: H.264 Payload.
+    ///     Revision: 1.00
+    ///     Section "3.3.14 UVCX_BITRATE_LAYERS" (p. 35)
     struct uvcx_bitrate
     {
+        /// Bitmask for a number of IDs, for a single-stream and
+        /// single-layer H.264 stream this should always be zero (see
+        /// section 3.3.2.1).
         uint16_t m_layer_id;
+
+        /// Peak bit-rate in bits/sec for the specific layer
         uint32_t m_peak_bitrate;
+
+        /// Average bit-rate in bits/sec for the specific layer
         uint32_t m_average_bitrate;
+
     } __attribute__((packed));
 
     // Output operator for the uvcx_video_config
@@ -783,39 +786,46 @@ namespace linux
     {
     public:
 
+        void open(const char* device, std::error_code& error)
+        {
+            assert(device);
+            assert(!error);
+
+            Super::open(device, error);
+
+            if (error)
+                return;
+
+            memset(&m_bitrates, 0, sizeof(m_bitrates));
+            Super::query(0x0E, UVC_GET_CUR, (uint8_t*) &m_bitrates, error);
+        }
+
         void request_bitrates(uint32_t average_bitrate, uint32_t peak_bitrate,
                               std::error_code& error)
         {
-             uvcx_bitrate bitrates;
-             memset(&bitrates, 0, sizeof(bitrates));
+            assert(!error);
+            assert(Super::is_status_open() || Super::is_status_streaming());
 
-             Super::query(0x0E, UVC_GET_CUR, (uint8_t*) &bitrates, error);
+            m_bitrates.m_peak_bitrate = peak_bitrate;
+            m_bitrates.m_average_bitrate = average_bitrate;
 
-             if (error)
-             {
-                 std::cout << "YUCK YUCK" << std::endl;
-                 assert(0);
-                 return;
-             }
-
-             std::cout << bitrates << std::endl;
-
-             bitrates.m_peak_bitrate = peak_bitrate;
-             bitrates.m_average_bitrate = average_bitrate;
-
-             Super::query(0x0E, UVC_SET_CUR, (uint8_t*) &bitrates, error);
-
-             if (error)
-             {
-                 std::cout << "YUCK YUCK 2" << std::endl;
-                 assert(0);
-                 return;
-             }
-
-             std::cout << bitrates << std::endl;
+            Super::query(0x0E, UVC_SET_CUR, (uint8_t*) &m_bitrates, error);
         }
-    };
 
+        uint32_t average_bitrate() const
+        {
+            return m_bitrates.m_average_bitrate;
+        }
+
+        uint32_t peak_bitrate() const
+        {
+            return m_bitrates.m_peak_bitrate;
+        }
+
+    private:
+
+        uvcx_bitrate m_bitrates;
+    };
 
     /// Fall-through case for the case where TraceTag is meta::not_found
     template<class TraceTag, class Super>

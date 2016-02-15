@@ -57,29 +57,23 @@ void write_raw_capture(const char* device, const char* filename)
         append<c4m::enable_trace>;
 
     c4m::linux::camera2<features> camera;
-    camera.set_trace_stdout();
+    //camera.set_trace_stdout();
     camera.try_open(device);
 
     std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
-    //std::cout << "Requesting resolution: " << std::endl;
-    std::cout << "b w = " << camera.width() << " "
-              << "b h = " << camera.height() << std::endl;
-
-    camera.try_request_resolution(40,500);
+    camera.try_request_resolution(800,600);
     std::cout << "w = " << camera.width() << " "
               << "h = " << camera.height() << std::endl;
+
+
 
     camera.try_request_i_frame_period(1000);
     std::cout << "i_frame = " << camera.i_frame_period() << std::endl;
 
-    std::cout << "START STREAMING" << std::endl;
     camera.try_start_streaming();
 
-    std::cout << "a w = " << camera.width() << " "
-              << "a h = " << camera.height() << std::endl;
-
-    // return;
+    camera.try_request_bitrates(100000,100000);
 
     uint32_t frames = 0;
     while(frames < 500)
@@ -89,20 +83,12 @@ void write_raw_capture(const char* device, const char* filename)
 
         // if (frames == 100)
         // {
-        //     camera.set_bitrates(100000,100000, error);
-        //     assert(!error);
+        //     camera.try_request_bitrates(100000,100000);
         // }
 
         // if (frames == 200)
         // {
-        //     camera.set_bitrates(50000,50000, error);
-        //     assert(!error);
-        // }
-
-        // if (frames == 300)
-        // {
-        //     camera.set_bitrates(25000,25000, error);
-        //     assert(!error);
+        //     camera.try_request_bitrates(50000,50000);
         // }
 
         capture_file.write((const char*) data.m_data, data.m_size);
