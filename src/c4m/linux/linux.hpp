@@ -25,21 +25,18 @@
 #include "zero_timestamp_at_initial_capture.hpp"
 
 #include "scoped_file_descriptor.hpp"
-#include "open.hpp"
+
 #include "ioctl.hpp"
-#include "read_capability.hpp"
-#include "read_format.hpp"
-#include "set_format.hpp"
-#include "is_a_video_capture_device.hpp"
+
+
+
+
 #include "has_streaming_io_ioctls.hpp"
 #include "print_v4l2_format.hpp"
-#include "request_memory_map_buffers.hpp"
-#include "memory_map_buffers.hpp"
-#include "enqueue_buffer.hpp"
-#include "enqueue_buffers.hpp"
-#include "start_streaming.hpp"
-#include "dequeue_buffer.hpp"
-#include "stop_streaming.hpp"
-#include "enumerate_formats.hpp"
+
+
+
+
+
 #include "v4l2_pixelformat_to_string.hpp"
 #include "string_to_v4l2_pixelformat.hpp"

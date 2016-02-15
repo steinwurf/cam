@@ -16,6 +16,7 @@
 #include "../status_layer.hpp"
 #include "../update_status_layer.hpp"
 #include "trace_capture_layer.hpp"
+#include "../throw_if_error_layer.hpp"
 
 #include <linux/uvcvideo.h>
 #include <linux/usb/video.h>
@@ -911,6 +912,7 @@ namespace linux
         create_udev_device<
         zero_timestamp_at_initial_capture<
         trace_capture_layer<find_enable_trace<Features>,
+        async_capture_layer<
         capture_layer<
         streaming_layer<
         trace_buffer_queue_layer<find_enable_trace<Features>,
@@ -925,10 +927,10 @@ namespace linux
         read_capability_layer2<
         retry_ioctl_layer<
         ioctl_layer<
-        open_layer2<
+        open_layer<
         trace_layer<find_enable_trace<Features>,
         status_layer<
-            final_layer2>>>>>>>>>>>>>>>>>>>>>>>>>>;
+        final_layer2>>>>>>>>>>>>>>>>>>>>>>>>>>>;
 
 }
 }

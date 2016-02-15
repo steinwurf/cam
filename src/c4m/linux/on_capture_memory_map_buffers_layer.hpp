@@ -27,6 +27,8 @@ namespace linux
         /// @return The captured data
         capture_data capture(std::error_code& error)
         {
+            assert(Super::is_state_streaming());
+
             if (!Super::is_memory_map_complete())
             {
                 Super::memory_map_buffers(error);

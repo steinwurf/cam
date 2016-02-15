@@ -123,10 +123,10 @@ namespace linux
             return m_buffers[index];
         }
 
-        private:
+    private:
 
-            /// The memory mapped buffers
-            std::vector<memory_map_buffer> m_buffers;
+        /// The memory mapped buffers
+        std::vector<memory_map_buffer> m_buffers;
 
     };
 }

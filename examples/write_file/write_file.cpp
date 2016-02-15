@@ -66,8 +66,6 @@ void write_raw_capture(const char* device, const char* filename)
     std::cout << "w = " << camera.width() << " "
               << "h = " << camera.height() << std::endl;
 
-
-
     camera.try_request_i_frame_period(1000);
     std::cout << "i_frame = " << camera.i_frame_period() << std::endl;
 
