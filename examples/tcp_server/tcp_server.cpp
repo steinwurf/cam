@@ -64,46 +64,47 @@ private:
 
     void do_stream(ba::ip::tcp::socket client)
     {
-         c4m::linux::camera2<c4m::default_features> camera;
-         camera.try_open("/dev/video1");
+        c4m::linux::camera2<c4m::default_features> camera;
+        camera.try_open("/dev/video1");
 
-         std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
+        std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
-         std::cout << "Requesting resolution: " << std::endl;
+        std::cout << "Requesting resolution: " << std::endl;
 
-         camera.try_request_resolution(400,500);
-         std::cout << "w = " << camera.width() << " "
-                   << "h = " << camera.height() << std::endl;
+        camera.try_request_resolution(400,500);
+        std::cout << "w = " << camera.width() << " "
+                  << "h = " << camera.height() << std::endl;
 
-         // Write header
-         write_to_socket<uint32_t>(client, camera.width());
-         write_to_socket<uint32_t>(client, camera.height());
+        // Write header
+        write_to_socket<uint32_t>(client, camera.width());
+        write_to_socket<uint32_t>(client, camera.height());
 
-         camera.try_start_streaming();
 
-         // Counts the number of NALUs
-         uint32_t nalu_count = 0;
-         while(1)
-         {
-             auto data = camera.try_capture();
-             assert(data);
+        camera.try_start_streaming();
 
-             std::cout << data << std::endl;
+        // Counts the number of NALUs
+        uint32_t nalu_count = 0;
+        while(1)
+        {
+            auto data = camera.try_capture();
+            assert(data);
 
-             auto nalus = n4lu::to_annex_b_nalus(data.m_data, data.m_size);
+            std::cout << data << std::endl;
 
-             for(const auto& nalu : nalus)
-             {
-                 std::cout << "  " << nalu_count << ": " << nalu << std::endl;
-                 assert(nalu);
+            auto nalus = n4lu::to_annex_b_nalus(data.m_data, data.m_size);
 
-                 write_to_socket<uint64_t>(client, data.m_timestamp);
+            for (const auto& nalu : nalus)
+            {
+                std::cout << "  " << nalu_count << ": " << nalu << std::endl;
+                assert(nalu);
 
-                 write_to_socket<uint32_t>(client, nalu.m_size);
-                 write_to_socket(client, nalu.m_data, nalu.m_size);
-                 ++nalu_count;
+                write_to_socket<uint64_t>(client, data.m_timestamp);
+
+                write_to_socket<uint32_t>(client, nalu.m_size);
+                write_to_socket(client, nalu.m_data, nalu.m_size);
+                ++nalu_count;
              }
-         }
+        }
     }
 
 
@@ -158,6 +159,7 @@ private:
 
     void do_stream(ba::ip::tcp::socket client)
     {
+
          c4m::linux::camera2<c4m::default_features> camera;
          camera.try_open(m_camera.c_str());
 
@@ -191,46 +193,60 @@ private:
              camera.try_request_bitrates(bitrate, bitrate);
          }
 
-         // Counts the number of NALUs
-         uint32_t frames = 0;
-         while (1)
-         {
-             auto data = camera.try_capture();
-             assert(data);
+        // Counts the number of NALUs
+        uint32_t frames = 0;
+        uint32_t diff_timestamp = 0;
+        while(1)
+        {
+            auto data = camera.try_capture();
+            assert(data);
 
-             uint32_t diff_timestamp = data.m_timestamp - previous_timestamp;
-             if (data.m_timestamp < previous_timestamp)
-             {
-                 std::cout << "Drop capture data due to timestamp issue"
-                           << std::endl;
-                 continue;
-             }
+            // check if the timestamp is valid.
+            // The timestamp is expected to be higher than the last.
+            // The Logitech 920c camera can some times output timeframes which
+            // are 400 times higher than the previous. This have been observed
+            // when keeping ones hand above the camera lense for ~30 seconds.
+            // This is obviously bogus, and hence we check that the timestamp
+            // is no more than 10 times larger than the last.
+            if (data.m_timestamp < previous_timestamp ||
+                (previous_timestamp != 0 &&
+                data.m_timestamp / previous_timestamp > 10))
+            {
+                std::cout << "Drop capture data due to timestamp issue"
+                          << " m_timestamp: " << data.m_timestamp
+                          << std::endl;
+                continue;
+                // instead of throwing away the capture data one could instead
+                // try to correct it by using the previous timestamp increment.
+                // data.m_timestamp = previous_timestamp + diff_timestamp;
+            }
 
-             assert(data.m_timestamp >= previous_timestamp);
-             previous_timestamp = data.m_timestamp;
+            assert(data.m_timestamp >= previous_timestamp);
 
-             auto split_captures = c4m::split_capture_on_nalu_type(data);
+            diff_timestamp = data.m_timestamp - previous_timestamp;
+            previous_timestamp = data.m_timestamp;
 
-             for (const auto& c : split_captures)
-             {
-                 std::cout << frames << ": " << c << " diff_timestamp = "
-                           << diff_timestamp << std::endl;
+            auto split_captures = c4m::split_capture_on_nalu_type(data);
+            for (const auto& c : split_captures)
+            {
+                std::cout << frames << ": " << c << " diff_timestamp = "
+                          << diff_timestamp << std::endl;
 
-                 auto nalus = n4lu::to_annex_b_nalus(c.m_data, c.m_size);
+                auto nalus = n4lu::to_annex_b_nalus(c.m_data, c.m_size);
 
-                 for(const auto& nalu : nalus)
-                 {
-                     std::cout << "  " << nalu << std::endl;
-                     assert(nalu);
-                 }
+                for (const auto& nalu : nalus)
+                {
+                    std::cout << "  " << nalu << std::endl;
+                    assert(nalu);
+                }
 
-                 write_to_socket<uint64_t>(client, c.m_timestamp);
-                 write_to_socket<uint32_t>(client, c.m_size);
-                 write_to_socket(client, c.m_data, c.m_size);
+                write_to_socket<uint64_t>(client, c.m_timestamp);
+                write_to_socket<uint32_t>(client, c.m_size);
+                write_to_socket(client, c.m_data, c.m_size);
 
-                 ++frames;
-             }
-         }
+                ++frames;
+            }
+        }
     }
 
 
