@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cstring>
 #include <system_error>
 #include <linux/videodev2.h>
 

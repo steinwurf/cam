@@ -52,29 +52,6 @@ namespace linux
             m_is_enqueued.resize(0);
         }
 
-        void enqueue_all_buffers(std::error_code& error)
-        {
-            assert(!error);
-
-            for(uint32_t i = 0; i < m_is_enqueued.size(); ++i)
-            {
-                if (is_buffer_enqueued(i))
-                {
-                    // Buffer already enqueued
-                    continue;
-                }
-
-                enqueue_buffer(i, error);
-
-                if (error)
-                {
-                    return;
-                }
-
-                assert(m_is_enqueued[i] == true);
-            }
-        }
-
         /// Enqueue a specific buffer
         ///
         /// Docs: http://linuxtv.org/downloads/v4l-dvb-apis/vidioc-qbuf.html
@@ -149,6 +126,7 @@ namespace linux
             return m_is_enqueued[index];
         }
 
+        /// @return True if we have buffers enqueued otherwise false
         bool have_enqueued_buffers() const
         {
             for(auto is_enqueued : m_is_enqueued)
@@ -161,6 +139,28 @@ namespace linux
             return false;
         }
 
+    protected:
+
+        /// Small helper function to enqueue all buffers, used when we
+        /// start streaming.
+        void enqueue_all_buffers(std::error_code& error)
+        {
+            assert(!error);
+
+            for(uint32_t i = 0; i < m_is_enqueued.size(); ++i)
+            {
+                assert(!is_buffer_enqueued(i));
+
+                enqueue_buffer(i, error);
+
+                if (error)
+                {
+                    return;
+                }
+
+                assert(m_is_enqueued[i] == true);
+            }
+        }
 
     private:
 

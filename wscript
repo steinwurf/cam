@@ -43,6 +43,11 @@ def resolve(ctx):
         git_repository='bitbucket.org/steinwurf/n4lu.git',
         major=1))
 
+    ctx.add_dependency(resolve.ResolveVersion(
+        name='meta',
+        git_repository='github.com/steinwurf/meta.git',
+        major=2))
+
     # Internal dependencies
     if ctx.is_toplevel():
 
@@ -56,6 +61,34 @@ def configure(conf):
 
     conf.load("wurf_common_tools")
 
+    if conf.is_mkspec_platform('linux'):
+
+        errmsg = """not found, is available in the following packages:
+
+            Debian/Ubuntu: apt-get install libudev-dev
+            Fedora/CentOS: yum install systemd-devel
+        """
+
+        conf.check_cxx(header_name='libudev.h', errmsg=errmsg)
+
+        if not conf.env['LIB_UDEV']:
+            conf.check_cxx(lib='udev')
+
+        errmsg = """not found, is available in the following packages:
+
+            Debian/Ubuntu: apt-get install libv4l-dev
+        """
+        conf.check_cxx(header_name='linux/videodev2.h', errmsg=errmsg)
+
+        errmsg = """not found, is available in the following packages:
+
+            Debian/Ubuntu: apt-get install libusb-1.0-0-dev
+        """
+        conf.check_cxx(header_name='libusb-1.0/libusb.h', errmsg=errmsg)
+
+        if not conf.env['LIB_USB-1.0']:
+            conf.check_cxx(lib='usb-1.0')
+
 
 def build(bld):
 
@@ -63,7 +96,7 @@ def build(bld):
 
     bld.env.append_unique(
         'DEFINES_STEINWURF_VERSION',
-        'STEINWURF_NETC4M_VERSION="{}"'.format(
+        'STEINWURF_C4M_VERSION="{}"'.format(
             VERSION))
 
     # bld.program(
@@ -75,7 +108,8 @@ def build(bld):
 
     bld(#includes=['src'],
         export_includes=['src'],
-        name='c4m_includes')
+        name='c4m_includes',
+        use=['meta_includes', 'UDEV', 'USB-1.0'])
 
 
     if bld.is_toplevel():
@@ -86,3 +120,4 @@ def build(bld):
         bld.recurse('examples/tcp_server')
         bld.recurse('examples/tcp_client')
         bld.recurse('examples/write_file')
+        bld.recurse('examples/uvc_test')

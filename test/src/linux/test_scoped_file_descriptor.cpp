@@ -5,15 +5,12 @@
 // The copyright notice above does not evidence any
 // actual or intended publication of such source code.
 
-#pragma once
+#include <c4m/linux/scoped_file_descriptor.hpp>
 
-#include <system_error>
+#include <gtest/gtest.h>
 
-#include "error.hpp"
-
-namespace std
+TEST(linux_scoped_file_descriptor, api)
 {
-    /// Reference: http://bit.ly/1RCq7ts
-    template <>
-    struct is_error_code_enum<c4m::error> : public true_type {};
+
+
 }

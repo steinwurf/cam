@@ -53,23 +53,43 @@ void write_raw_capture(const char* device, const char* filename)
     std::cout << "Raw capture file: " << filename << std::endl;
     std::cout << "Device: " << device << std::endl;
 
-    c4m::linux::camera2 camera;
-    camera.open(device);
+    using features = c4m::default_features::
+        append<c4m::enable_trace>;
+
+    c4m::linux::camera2<features> camera;
+    //camera.set_trace_stdout();
+    camera.try_open(device);
 
     std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
-    std::cout << "Requesting resolution: " << std::endl;
-    camera.request_resolution(400,500);
+    camera.try_request_resolution(800,600);
     std::cout << "w = " << camera.width() << " "
               << "h = " << camera.height() << std::endl;
 
-    camera.start_streaming();
+
+
+    camera.try_request_i_frame_period(1000);
+    std::cout << "i_frame = " << camera.i_frame_period() << std::endl;
+
+    camera.try_start_streaming();
+
+    camera.try_request_bitrates(100000,100000);
 
     uint32_t frames = 0;
     while(frames < 500)
     {
-        auto data = camera.capture();
+        auto data = camera.try_capture();
         std::cout << data << std::endl;
+
+        // if (frames == 100)
+        // {
+        //     camera.try_request_bitrates(100000,100000);
+        // }
+
+        // if (frames == 200)
+        // {
+        //     camera.try_request_bitrates(50000,50000);
+        // }
 
         capture_file.write((const char*) data.m_data, data.m_size);
 
@@ -129,13 +149,13 @@ void write_custom_capture(const char* device, const char* filename)
     std::cout << "Custom capture file: " << filename << std::endl;
     std::cout << "Device: " << device << std::endl;
 
-    c4m::linux::camera2 camera;
-    camera.open(device);
+    c4m::linux::camera2<c4m::default_features> camera;
+    camera.try_open(device);
 
     std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
     std::cout << "Requesting resolution: " << std::endl;
-    camera.request_resolution(800,600);
+    camera.try_request_resolution(800,600);
     std::cout << "w = " << camera.width() << " "
               << "h = " << camera.height() << std::endl;
 
@@ -147,12 +167,12 @@ void write_custom_capture(const char* device, const char* filename)
     write_to_file<uint32_t>(capture_file, camera.width());
     write_to_file<uint32_t>(capture_file, camera.height());
 
-    camera.start_streaming();
+    camera.try_start_streaming();
 
     uint32_t frames = 0;
     while(frames < 500)
     {
-        auto data = camera.capture();
+        auto data = camera.try_capture();
         assert(data);
 
         uint32_t diff_timestamp = data.m_timestamp - previous_timestamp;
@@ -253,13 +273,30 @@ void write_custom_capture_v2(const char* device, const char* filename)
     std::cout << "Custom capture file: " << filename << std::endl;
     std::cout << "Device: " << device << std::endl;
 
-    c4m::linux::camera2 camera;
-    camera.open(device);
+    using features = c4m::default_features::
+        append<c4m::enable_trace>;
+
+    using camera_type = c4m::linux::camera2<features>;
+    camera_type camera;
+
+    if (c4m::has_set_trace_callback<camera_type>::value)
+    {
+        c4m::set_trace_callback(camera,
+            [](const std::string& zone, const std::string& msg)
+            {
+                //if (zone == "capture_layer")
+                //    return;
+
+                std::cout << zone << ":\n" << msg << std::endl;
+            });
+    }
+
+    camera.try_open(device);
 
     std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
     std::cout << "Requesting resolution: " << std::endl;
-    camera.request_resolution(400,600);
+    camera.try_request_resolution(400,600);
     std::cout << "w = " << camera.width() << " "
               << "h = " << camera.height() << std::endl;
 
@@ -271,12 +308,12 @@ void write_custom_capture_v2(const char* device, const char* filename)
     write_to_file<uint32_t>(capture_file, camera.width());
     write_to_file<uint32_t>(capture_file, camera.height());
 
-    camera.start_streaming();
+    camera.try_start_streaming();
 
     uint32_t frames = 0;
-    while(frames < 500)
+    while(frames < 100)
     {
-        auto data = camera.capture();
+        auto data = camera.try_capture();
         assert(data);
 
         uint32_t diff_timestamp = data.m_timestamp - previous_timestamp;
@@ -293,16 +330,16 @@ void write_custom_capture_v2(const char* device, const char* filename)
 
         for (const auto& c : split_captures)
         {
-            std::cout << c << " diff_timestamp = "
-                      << diff_timestamp << std::endl;
+            // std::cout << c << " diff_timestamp = "
+            //           << diff_timestamp << std::endl;
 
             auto nalus = n4lu::to_annex_b_nalus(c.m_data, c.m_size);
 
-            for(const auto& nalu : nalus)
-            {
-                std::cout << "  " << nalu << std::endl;
-                assert(nalu);
-            }
+            // for(const auto& nalu : nalus)
+            // {
+            //     std::cout << "  " << nalu << std::endl;
+            //     assert(nalu);
+            // }
 
             write_to_file<uint64_t>(capture_file, c.m_timestamp);
             write_to_file<uint32_t>(capture_file, c.m_size);
@@ -336,8 +373,8 @@ int main(int argc, char* argv[])
 
     try
     {
-        // write_raw_capture(camera_file.c_str(), "raw_capture.h264");
-        write_custom_capture_v2(camera_file.c_str(), "custom_capture_v2.h264");
+        write_raw_capture(camera_file.c_str(), "raw_capture.h264");
+        // write_custom_capture_v2(camera_file.c_str(), "custom_capture_v2.h264");
     }
     catch (std::exception& e)
     {

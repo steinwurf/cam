@@ -10,6 +10,8 @@
 #include <memory>
 #include <utility>
 #include <boost/asio.hpp>
+#include <boost/program_options.hpp>
+
 
 #include <sak/convert_endian.hpp>
 #include <n4lu/to_annex_b_nalus.hpp>
@@ -20,7 +22,10 @@
 
 #include <c4m/split_capture_on_nalu_type.hpp>
 
+#include "get_option.hpp"
+
 namespace ba = boost::asio;
+namespace bpo = boost::program_options;
 
 /// Helper to write types to the socket
 template<class T>
@@ -59,13 +64,14 @@ private:
 
     void do_stream(ba::ip::tcp::socket client)
     {
-        c4m::linux::camera2 camera;
-        camera.open("/dev/video1");
+        c4m::linux::camera2<c4m::default_features> camera;
+        camera.try_open("/dev/video1");
 
         std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
         std::cout << "Requesting resolution: " << std::endl;
-        camera.request_resolution(400,500);
+
+        camera.try_request_resolution(400,500);
         std::cout << "w = " << camera.width() << " "
                   << "h = " << camera.height() << std::endl;
 
@@ -73,13 +79,14 @@ private:
         write_to_socket<uint32_t>(client, camera.width());
         write_to_socket<uint32_t>(client, camera.height());
 
-        camera.start_streaming();
+
+        camera.try_start_streaming();
 
         // Counts the number of NALUs
         uint32_t nalu_count = 0;
         while(1)
         {
-            auto data = camera.capture();
+            auto data = camera.try_capture();
             assert(data);
 
             std::cout << data << std::endl;
@@ -137,11 +144,13 @@ class tcp_server_v2
 {
 public:
 
-    tcp_server_v2(ba::io_service& io_service, const std::string& camera)
+    tcp_server_v2(ba::io_service& io_service, const std::string& camera,
+                  const bpo::variables_map& vm)
         : m_io_service(io_service),
           m_acceptor(io_service,
                      ba::ip::tcp::endpoint(ba::ip::tcp::v4(), 54321)),
-          m_camera(camera)
+          m_camera(camera),
+          m_variables_map(vm)
     {
         do_accept();
     }
@@ -150,32 +159,46 @@ private:
 
     void do_stream(ba::ip::tcp::socket client)
     {
-        c4m::linux::camera2 camera;
-        camera.open(m_camera.c_str());
 
-        std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
+         c4m::linux::camera2<c4m::default_features> camera;
+         camera.try_open(m_camera.c_str());
 
-        std::cout << "Requesting resolution: " << std::endl;
-        camera.request_resolution(400,500);
-        std::cout << "w = " << camera.width() << " "
-                  << "h = " << camera.height() << std::endl;
+         std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
 
-        // The time stamp of the previous captured NALU (needed to
-        // calculate difference between two NALUs)
-        uint64_t previous_timestamp = 0;
+         std::cout << "Requesting resolution: " << std::endl;
+         camera.try_request_resolution(400,500);
+         std::cout << "w = " << camera.width() << " "
+                   << "h = " << camera.height() << std::endl;
 
-        // Write header
-        write_to_socket<uint32_t>(client, camera.width());
-        write_to_socket<uint32_t>(client, camera.height());
 
-        camera.start_streaming();
+         if (m_variables_map.count("i_frame_period"))
+         {
+             camera.try_request_i_frame_period(
+                 get_option<uint32_t>(m_variables_map, "i_frame_period"));
+         }
+
+         // The time stamp of the previous captured NALU (needed to
+         // calculate difference between two NALUs)
+         uint64_t previous_timestamp = 0;
+
+         // Write header
+         write_to_socket<uint32_t>(client, camera.width());
+         write_to_socket<uint32_t>(client, camera.height());
+
+         camera.try_start_streaming();
+
+         if (m_variables_map.count("bitrate"))
+         {
+             auto bitrate = get_option<uint32_t>(m_variables_map, "bitrate");
+             camera.try_request_bitrates(bitrate, bitrate);
+         }
 
         // Counts the number of NALUs
         uint32_t frames = 0;
         uint32_t diff_timestamp = 0;
         while(1)
         {
-            auto data = camera.capture();
+            auto data = camera.try_capture();
             assert(data);
 
             // check if the timestamp is valid.
@@ -255,14 +278,35 @@ private:
     ba::io_service& m_io_service;
     ba::ip::tcp::acceptor m_acceptor;
     std::string m_camera;
+    bpo::variables_map m_variables_map;
 
 };
 
 
 int main(int argc, char* argv[])
 {
-    (void) argc;
-    (void) argv;
+    // Declare the supported options.
+    bpo::options_description description("Allowed options");
+    description.add_options()
+        ("help", "produce help message")
+        ("i_frame_period", bpo::value<uint32_t>()->default_value(1000),
+         "The period in milliseconds between two i-frames")
+        // ("average_bitrate", bpo::value<uint32_t>(),
+        //  "The average bitrate in bits/sec")
+        ("bitrate", bpo::value<uint32_t>(),
+         "The peak and average bitrate in bits/sec");
+
+    bpo::variables_map vm;
+    bpo::store(bpo::parse_command_line(argc, argv, description), vm);
+    bpo::notify(vm);
+
+    if (vm.count("help"))
+    {
+        std::cout << description << std::endl;
+        return 1;
+    }
+
+
 
     try
     {
@@ -277,7 +321,7 @@ int main(int argc, char* argv[])
         }
 
 
-        tcp_server_v2 s(io_service, camera);
+        tcp_server_v2 s(io_service, camera, vm);
 
         io_service.run();
     }

@@ -25,20 +25,9 @@ namespace c4m
     template<class Super>
     class throw_if_error_layer : public Super
     {
-
     public:
 
-        // Avoid name hiding. For more information about name hiding see:
-        // http://www.stroustrup.com/bs_faq2.html#overloadderived
-        using Super::open;
-        using Super::request_resolution;
-        using Super::start_streaming;
-        using Super::stop_streaming;
-        using Super::capture;
-
-    public:
-
-        void open(const char* device)
+        void try_open(const char* device)
         {
             assert(device);
 
@@ -48,7 +37,7 @@ namespace c4m
             throw_if_error(error);
         }
 
-        void request_resolution(uint32_t width, uint32_t height)
+        void try_request_resolution(uint32_t width, uint32_t height)
         {
             assert(width > 0);
             assert(height > 0);
@@ -60,7 +49,24 @@ namespace c4m
 
         }
 
-        void start_streaming()
+        void try_request_i_frame_period(uint32_t i_frame_period)
+        {
+            std::error_code error;
+            Super::request_i_frame_period(i_frame_period, error);
+
+            throw_if_error(error);
+        }
+
+        void try_request_bitrates(uint32_t average_bitrate,
+                                  uint32_t peak_bitrate)
+        {
+            std::error_code error;
+            Super::request_bitrates(average_bitrate, peak_bitrate, error);
+
+            throw_if_error(error);
+        }
+
+        void try_start_streaming()
         {
             std::error_code error;
             Super::start_streaming(error);
@@ -68,7 +74,7 @@ namespace c4m
             throw_if_error(error);
         }
 
-        void stop_streaming()
+        void try_stop_streaming()
         {
             std::error_code error;
             Super::stop_streaming(error);
@@ -76,7 +82,7 @@ namespace c4m
             throw_if_error(error);
         }
 
-        capture_data capture()
+        capture_data try_capture()
         {
             std::error_code error;
             auto data = Super::capture(error);

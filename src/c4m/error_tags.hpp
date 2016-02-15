@@ -23,3 +23,5 @@ C4M_ERROR_TAG(format_is_not_h264,
 C4M_ERROR_TAG(unable_to_allocate_buffers,
               "Unable to allocate memory mapped buffers - device may be "
               "out of memory")
+
+C4M_ERROR_TAG(could_not_set_bitrates, "Unable to set bitrates")
