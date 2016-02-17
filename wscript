@@ -48,6 +48,11 @@ def resolve(ctx):
         git_repository='github.com/steinwurf/meta.git',
         major=2))
 
+    ctx.add_dependency(resolve.ResolveVersion(
+        name='skipper',
+        git_repository='github.com/steinwurf/skipper.git',
+        major=1))
+
     # Internal dependencies
     if ctx.is_toplevel():
 
