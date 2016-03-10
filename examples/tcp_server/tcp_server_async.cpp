@@ -183,10 +183,6 @@ private:
                 get_option<uint32_t>(m_variables_map, "i_frame_period"));
         }
 
-        // The time stamp of the previous captured NALU (needed to
-        // calculate difference between two NALUs)
-        uint64_t previous_timestamp = 0;
-
         // Write header
         write_to_socket<uint32_t>(*m_client, m_camera->width());
         write_to_socket<uint32_t>(*m_client, m_camera->height());

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "async_capture_layer.hpp"
 #include "final_layer.hpp"
 #include "open_layer.hpp"
 #include "ioctl_layer.hpp"
@@ -28,15 +29,8 @@
 
 #include "ioctl.hpp"
 
-
-
-
 #include "has_streaming_io_ioctls.hpp"
 #include "print_v4l2_format.hpp"
-
-
-
-
 
 #include "v4l2_pixelformat_to_string.hpp"
 #include "string_to_v4l2_pixelformat.hpp"

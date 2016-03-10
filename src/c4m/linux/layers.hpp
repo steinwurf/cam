@@ -262,6 +262,7 @@ namespace linux
         uint64_t get_sysattr_value(udev_device* device, const char* name,
                                    std::error_code& error)
         {
+            (void) error;
             assert(device != nullptr);
             assert(name != nullptr);
 
@@ -345,6 +346,7 @@ namespace linux
                                         ssize_t& device_count,
                                         std::error_code& error)
         {
+            (void) error;
             libusb_device** device_list = nullptr;
 
             device_count = libusb_get_device_list(context, &device_list);
@@ -472,9 +474,9 @@ namespace linux
 
                 assert(config);
 
-                for (uint32_t j = 0; j < config->bNumInterfaces; ++j)
+                for (uint8_t j = 0; j < config->bNumInterfaces; ++j)
                 {
-                    for (uint32_t k = 0;
+                    for (int32_t k = 0;
                          k < config->interface[j].num_altsetting; ++k)
                     {
                         const libusb_interface_descriptor* interface;
@@ -494,7 +496,7 @@ namespace linux
 
                         while(ptr - interface->extra +
                               sizeof(extension_unit_descriptor) <
-                              interface->extra_length)
+                              (uint32_t)interface->extra_length)
                         {
 
                             auto* desc = (extension_unit_descriptor*) ptr;
