@@ -10,20 +10,27 @@
 #include <cstdint>
 #include <vector>
 
+#include <boost/asio.hpp>
+
 #include "v4l2_timestamp_to_micro_seconds.hpp"
 
 namespace c4m
 {
 namespace linux
 {
+    /// This layer implements the capture function that is used by the user
+    /// to read frames from the camera.
     template<class Super>
     class capture_layer : public Super
     {
     public:
 
+        /// Implement that start_streaming function such that we can
+        /// initialize this layer.
         void start_streaming(std::error_code& error)
         {
             assert(!error);
+            assert(Super::is_status_open());
 
             Super::start_streaming(error);
 
@@ -37,9 +44,12 @@ namespace linux
             m_enqueue_index = 0;
         }
 
+        /// Reads data from the camera and returns it to the user. This is
+        /// a blocking call.
         capture_data capture(std::error_code& error)
         {
             assert(!error);
+            assert(Super::is_status_streaming());
 
             if (m_enqueue_on_capture)
             {

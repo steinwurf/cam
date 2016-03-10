@@ -66,8 +66,6 @@ void write_raw_capture(const char* device, const char* filename)
     std::cout << "w = " << camera.width() << " "
               << "h = " << camera.height() << std::endl;
 
-
-
     camera.try_request_i_frame_period(1000);
     std::cout << "i_frame = " << camera.i_frame_period() << std::endl;
 
@@ -316,7 +314,6 @@ void write_custom_capture_v2(const char* device, const char* filename)
         auto data = camera.try_capture();
         assert(data);
 
-        uint32_t diff_timestamp = data.m_timestamp - previous_timestamp;
         if (data.m_timestamp < previous_timestamp)
         {
             std::cout << "Drop capture data due to timestamp issue" << std::endl;
@@ -330,8 +327,6 @@ void write_custom_capture_v2(const char* device, const char* filename)
 
         for (const auto& c : split_captures)
         {
-            // std::cout << c << " diff_timestamp = "
-            //           << diff_timestamp << std::endl;
 
             auto nalus = n4lu::to_annex_b_nalus(c.m_data, c.m_size);
 

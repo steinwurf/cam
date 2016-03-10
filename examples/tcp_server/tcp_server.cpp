@@ -307,6 +307,8 @@ int main(int argc, char* argv[])
     }
 
 
+    while(1)
+    {
 
     try
     {
@@ -328,6 +330,7 @@ int main(int argc, char* argv[])
     catch (std::exception& e)
     {
         std::cerr << "Exception: " << e.what() << "\n";
+    }
     }
 
     return 0;

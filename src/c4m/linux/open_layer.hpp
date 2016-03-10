@@ -20,8 +20,9 @@ namespace c4m
 {
 namespace linux
 {
+    /// This layer will open the file descriptor representing the webcam device
     template<class Super>
-    class open_layer2 : public Super
+    class open_layer : public Super
     {
     public:
 
@@ -29,6 +30,7 @@ namespace linux
         {
             assert(device);
             assert(!error);
+            assert(Super::is_status_closed());
 
             m_file_descriptor = scoped_file_descriptor(::open(device, O_RDWR));
 

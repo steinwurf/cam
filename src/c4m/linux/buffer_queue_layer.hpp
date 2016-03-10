@@ -26,6 +26,7 @@ namespace linux
         {
             assert(!error);
             assert(m_is_enqueued.size() == 0);
+            assert(Super::is_status_open());
 
             Super::start_streaming(error);
 
@@ -42,9 +43,13 @@ namespace linux
             enqueue_all_buffers(error);
         }
 
+        /// Stops the streaming
+        ///
+        /// @param error If an error occurs the error code should be updated
         void stop_streaming(std::error_code& error)
         {
             assert(!error);
+            assert(Super::is_status_streaming());
 
             Super::stop_streaming(error);
 
@@ -85,7 +90,7 @@ namespace linux
             m_is_enqueued[index] = true;
         }
 
-        /// Dequeue a buffer with video data
+        /// Dequeue a buffer with video data, this is a blocking call.
         ///
         /// Docs: http://linuxtv.org/downloads/v4l-dvb-apis/vidioc-qbuf.html
         ///
