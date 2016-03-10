@@ -17,7 +17,7 @@ namespace c4m
 namespace linux
 {
     template<class Super>
-    class check_has_streaming_io_ioctl_layer : public Super
+    class check_has_streaming_io_ioctls_layer : public Super
     {
     public:
 
@@ -26,7 +26,9 @@ namespace linux
             Super::open(device, error);
 
             if (error)
+            {
                 return;
+            }
 
             if (!Super::has_streaming_io_ioctls())
             {

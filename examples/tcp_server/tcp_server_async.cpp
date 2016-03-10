@@ -47,13 +47,13 @@ void write_to_socket(ba::ip::tcp::socket& socket,
 
 
 /// We can do better - but currently it is don't care :)
-using camera_type = c4m::linux::camera2<c4m::default_features>;
+using camera_type = c4m::linux::camera<c4m::default_features>;
 namespace ph = std::placeholders;
 
 /// Write data to the socket in the same format as given for the
-/// write_custom_capture_v2(...) function in
+/// write_custom_capture(...) function in
 /// examples/write_file/write_file.cpp
-class tcp_server_v2_async
+class tcp_server_async
 {
 public:
 
@@ -61,7 +61,7 @@ public:
 
 public:
 
-    tcp_server_v2_async(ba::io_service& io_service,
+    tcp_server_async(ba::io_service& io_service,
                         const std::string& camera_device,
                   const bpo::variables_map& vm)
         : m_io_service(io_service),
@@ -107,7 +107,7 @@ private:
 
 
             m_camera->async_capture(
-                std::bind(&tcp_server_v2_async::do_capture,this, ph::_1));
+                std::bind(&tcp_server_async::do_capture,this, ph::_1));
             return;
             // instead of throwing away the capture data one could instead
             // try to correct it by using the previous timestamp increment.
@@ -141,7 +141,7 @@ private:
         }
 
         m_camera->async_capture(
-            std::bind(&tcp_server_v2_async::do_capture,this, ph::_1));
+            std::bind(&tcp_server_async::do_capture,this, ph::_1));
     }
 
 
@@ -196,7 +196,7 @@ private:
         }
 
         m_camera->async_capture(
-            std::bind(&tcp_server_v2_async::do_capture,this, ph::_1));
+            std::bind(&tcp_server_async::do_capture,this, ph::_1));
     }
 
 
@@ -257,7 +257,7 @@ int main(int argc, char* argv[])
         }
 
 
-        tcp_server_v2_async s(io_service, camera, vm);
+        tcp_server_async s(io_service, camera, vm);
 
         io_service.run();
     }

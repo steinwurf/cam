@@ -11,7 +11,7 @@ namespace c4m
 {
 namespace linux
 {
-    class final_layer2
+    class final_layer
     { };
 }
 }

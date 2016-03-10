@@ -52,99 +52,7 @@ class tcp_server
 {
 public:
 
-    tcp_server(ba::io_service& io_service)
-        : m_io_service(io_service),
-          m_acceptor(io_service,
-                     ba::ip::tcp::endpoint(ba::ip::tcp::v4(), 54321))
-    {
-        do_accept();
-    }
-
-private:
-
-    void do_stream(ba::ip::tcp::socket client)
-    {
-        c4m::linux::camera2<c4m::default_features> camera;
-        camera.try_open("/dev/video1");
-
-        std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
-
-        std::cout << "Requesting resolution: " << std::endl;
-
-        camera.try_request_resolution(400,500);
-        std::cout << "w = " << camera.width() << " "
-                  << "h = " << camera.height() << std::endl;
-
-        // Write header
-        write_to_socket<uint32_t>(client, camera.width());
-        write_to_socket<uint32_t>(client, camera.height());
-
-
-        camera.try_start_streaming();
-
-        // Counts the number of NALUs
-        uint32_t nalu_count = 0;
-        while(1)
-        {
-            auto data = camera.try_capture();
-            assert(data);
-
-            std::cout << data << std::endl;
-
-            auto nalus = n4lu::to_annex_b_nalus(data.m_data, data.m_size);
-
-            for (const auto& nalu : nalus)
-            {
-                std::cout << "  " << nalu_count << ": " << nalu << std::endl;
-                assert(nalu);
-
-                write_to_socket<uint64_t>(client, data.m_timestamp);
-
-                write_to_socket<uint32_t>(client, nalu.m_size);
-                write_to_socket(client, nalu.m_data, nalu.m_size);
-                ++nalu_count;
-             }
-        }
-    }
-
-
-    void do_accept()
-    {
-        auto server_endpoint = m_acceptor.local_endpoint();
-        std::cout << "Server on: " << server_endpoint << std::endl;
-
-        while(1)
-        {
-            auto client_socket = ba::ip::tcp::socket(m_io_service);
-
-            m_acceptor.accept(client_socket);
-
-            try
-            {
-                do_stream(std::move(client_socket));
-            }
-            catch (std::exception& e)
-            {
-                std::cerr << "Exception: " << e.what() << "\n";
-            }
-        }
-    }
-
-private:
-
-    ba::io_service& m_io_service;
-    ba::ip::tcp::acceptor m_acceptor;
-
-};
-
-/// Write data to the socket in the same format as given for the
-/// write_custom_capture_v2(...) function in
-/// examples/write_file/write_file.cpp
-class tcp_server_v2
-{
-public:
-
-    tcp_server_v2(ba::io_service& io_service, const std::string& camera,
+    tcp_server(ba::io_service& io_service, const std::string& camera,
                   const bpo::variables_map& vm)
         : m_io_service(io_service),
           m_acceptor(io_service,
@@ -160,7 +68,7 @@ private:
     void do_stream(ba::ip::tcp::socket client)
     {
 
-         c4m::linux::camera2<c4m::default_features> camera;
+         c4m::linux::camera<c4m::default_features> camera;
          camera.try_open(m_camera.c_str());
 
          std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
@@ -323,7 +231,7 @@ int main(int argc, char* argv[])
         }
 
 
-        tcp_server_v2 s(io_service, camera, vm);
+        tcp_server s(io_service, camera, vm);
 
         io_service.run();
     }

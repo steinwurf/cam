@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <cassert>
+#include <system_error>
+
 namespace c4m
 {
     /// Updates the status_layer depending on the error values returned by

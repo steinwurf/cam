@@ -12,5 +12,4 @@ bld.program(features='cxx',
             source='tcp_server_async.cpp',
             target='tcp_server_async',
             use=['boost_includes', 'boost_system', 'c4m_includes',
-                 'n4lu_includes', 'sak_includes','boost_program_options',
-                 'skipper'])
+                 'n4lu_includes', 'sak_includes','boost_program_options'])

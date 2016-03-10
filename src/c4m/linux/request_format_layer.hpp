@@ -11,13 +11,14 @@
 #include <linux/videodev2.h>
 
 #include "v4l2_pixelformat_to_string.hpp"
+#include "string_to_v4l2_pixelformat.hpp"
 
 namespace c4m
 {
 namespace linux
 {
     template<class Super>
-    class request_format_layer2 : public Super
+    class request_format_layer : public Super
     {
     public:
 

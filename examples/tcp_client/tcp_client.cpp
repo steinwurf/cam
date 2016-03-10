@@ -65,70 +65,6 @@ int run_client(int argc, char* argv[])
 
         std::cout << "w = " << width << " h = " << height << std::endl;
 
-        // Counts the number of NALUs
-        uint32_t nalu_count = 0;
-        while(1)
-        {
-
-            uint64_t timestamp = read_from_socket<uint64_t>(s);
-
-            // The sample time (timestamp delta)
-            uint64_t sample_time = timestamp - previous_timestamp;
-
-            uint32_t size = read_from_socket<uint32_t>(s);
-
-            buffer.resize(size);
-
-            read_from_socket(s, buffer.data(), size);
-
-            std::cout << "Read: size = " << size << " "
-                      << "timestamp = " << timestamp << " "
-                      << "sampletime = " << sample_time << std::endl;
-
-            auto nalu = n4lu::to_annex_b_nalu(buffer.data(), size);
-            std::cout << "  " << nalu_count << ": " <<  nalu << std::endl;
-
-            previous_timestamp = timestamp;
-            ++nalu_count;
-        }
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << "Exception: " << e.what() << "\n";
-    }
-
-    return 0;
-}
-
-int run_client_v2(int argc, char* argv[])
-{
-    (void) argc;
-    (void) argv;
-
-    try
-    {
-        ba::io_service io_service;
-
-        ba::ip::tcp::socket s(io_service);
-
-        auto endpoint = ba::ip::tcp::endpoint(
-            ba::ip::address_v4::from_string("127.0.0.1"), 54321);
-
-
-        // For the captured data
-        std::vector<uint8_t> buffer;
-
-        // The time stamp of the previous captured frame (needed to
-        // calculate sample time)
-        uint64_t previous_timestamp = 0;
-
-        s.connect(endpoint);
-
-        uint32_t width = read_from_socket<uint32_t>(s);
-        uint32_t height = read_from_socket<uint32_t>(s);
-
-        std::cout << "w = " << width << " h = " << height << std::endl;
-
         // Counts the number of capture segments
         uint32_t frames = 0;
         while(1)
@@ -172,5 +108,5 @@ int run_client_v2(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-    run_client_v2(argc, argv);
+    run_client(argc, argv);
 }

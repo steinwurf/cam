@@ -7,18 +7,19 @@
 
 #pragma once
 
-#include <vector>
-#include <system_error>
+#include "string_to_v4l2_pixelformat.hpp"
+
 #include <linux/videodev2.h>
 
-#include "string_to_v4l2_pixelformat.hpp"
+#include <system_error>
+#include <vector>
 
 namespace c4m
 {
 namespace linux
 {
     template<class Super>
-    class enumerate_formats_layer2 : public Super
+    class enumerate_formats_layer : public Super
     {
     public:
 

@@ -20,7 +20,7 @@ namespace linux
     /// Docs: https://linuxtv.org/downloads/v4l-dvb-apis/vidioc-querycap.html
     ///
     template<class Super>
-    class read_capability_layer2 : public Super
+    class read_capability_layer : public Super
     {
     public:
 

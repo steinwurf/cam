@@ -12,26 +12,12 @@ int run_uvc(int argc, char* argv[])
     (void) argc;
     (void) argv;
 
-    c4m::linux::camera2<c4m::default_features> s;
-
-    // using stack = c4m::throw_if_error_layer<
-    //     c4m::linux::xu_query<
-    //     c4m::linux::create_usb_device<
-    //     c4m::linux::create_udev_device<
-    //     c4m::linux::final_layer2>>>>;
-
-    // stack s;
+    c4m::linux::camera<c4m::default_features> s;
 
     s.try_open("/dev/video1");
-    //s.try_request_resolution(800,600);
+
     std::cout << "w = " << s.width() << " "
               << "h = " << s.height() << std::endl;
-
-
-    //s.try_open("/sys/class/video4linux/video1");
-
-    std::error_code error;
-    // s.config_query(error);
 
     return 0;
 }

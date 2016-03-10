@@ -10,8 +10,6 @@
 #include <cstdint>
 #include <vector>
 
-#include <boost/asio.hpp>
-
 #include "v4l2_timestamp_to_micro_seconds.hpp"
 
 namespace c4m

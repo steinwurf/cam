@@ -7,6 +7,10 @@
 
 #pragma once
 
+#include "error.hpp"
+
+#include <cassert>
+#include <string>
 #include <system_error>
 
 namespace c4m

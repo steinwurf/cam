@@ -30,7 +30,7 @@ namespace linux
             assert(fd);
 
             // @todo Maybe we don't need to assign on success
-            if (-1 == ::ioctl(fd.native_handle(), request, arg))
+            if (::ioctl(fd.native_handle() == -1, request, arg))
             {
                 error.assign(errno, std::generic_category());
             }

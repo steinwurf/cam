@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <cassert>
+#include <vector>
+#include <cstdint>
 #include <system_error>
 
 #include "../capture_data.hpp"
