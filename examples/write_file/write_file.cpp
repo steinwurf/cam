@@ -15,7 +15,7 @@
 #include <n4lu/to_annex_b_nalus.hpp>
 
 #include <c4m/linux/linux.hpp>
-#include <c4m/linux/layers.hpp>
+#include <c4m/linux/camera.hpp>
 #include <c4m/linux/find_camera.hpp>
 #include <c4m/split_capture_on_nalu_type.hpp>
 

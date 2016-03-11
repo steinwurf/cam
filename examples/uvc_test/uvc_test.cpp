@@ -5,7 +5,7 @@
 // The copyright notice above does not evidence any
 // actual or intended publication of such source code.
 
-#include <c4m/linux/layers.hpp>
+#include <c4m/linux/camera.hpp>
 
 int run_uvc(int argc, char* argv[])
 {
