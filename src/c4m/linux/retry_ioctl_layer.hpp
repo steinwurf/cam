@@ -32,7 +32,6 @@ namespace linux
                 Super::ioctl(request, arg, error);
             }
             while (error == std::errc::interrupted);
-
         }
     };
 }

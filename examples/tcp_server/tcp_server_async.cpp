@@ -183,10 +183,6 @@ private:
                 get_option<uint32_t>(m_variables_map, "i_frame_period"));
         }
 
-        // Write header
-        write_to_socket<uint32_t>(*m_client, m_camera->width());
-        write_to_socket<uint32_t>(*m_client, m_camera->height());
-
         m_camera->try_start_streaming();
 
         if (m_variables_map.count("bitrate"))

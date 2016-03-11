@@ -74,6 +74,5 @@ namespace linux
         trace_layer<find_enable_trace<Features>,
         status_layer<
         final_layer>>>>>>>>>>>>>>>>>>>>>>>>>>>;
-
 }
 }

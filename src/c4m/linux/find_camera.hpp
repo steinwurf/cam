@@ -28,6 +28,7 @@ namespace linux
             auto camera_file = ss.str();
             std::fstream c(camera_file);
 
+
             // check if camera exists
             if (!c.good())
                 continue;

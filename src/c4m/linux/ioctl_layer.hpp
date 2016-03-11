@@ -22,15 +22,15 @@ namespace linux
     {
     public:
 
-        void ioctl(uint64_t request, void *arg, std::error_code& error)
+        void ioctl(uint64_t request, void* arg, std::error_code& error)
         {
             assert(!error);
 
             const auto& fd = Super::file_descriptor();
             assert(fd);
 
-            // @todo Maybe we don't need to assign on success
-            if (::ioctl(fd.native_handle() == -1, request, arg))
+            /// @todo Maybe we don't need to assign on success
+            if (::ioctl(fd.native_handle(), request, arg) == -1)
             {
                 error.assign(errno, std::generic_category());
             }

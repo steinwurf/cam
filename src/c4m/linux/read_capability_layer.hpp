@@ -29,7 +29,9 @@ namespace linux
             Super::open(device, error);
 
             if(error)
+            {
                 return;
+            }
 
             memset(&m_capability, 0, sizeof(m_capability));
 

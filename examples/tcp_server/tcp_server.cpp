@@ -89,10 +89,6 @@ private:
          // calculate difference between two NALUs)
          uint64_t previous_timestamp = 0;
 
-         // Write header
-         write_to_socket<uint32_t>(client, camera.width());
-         write_to_socket<uint32_t>(client, camera.height());
-
          camera.try_start_streaming();
 
          if (m_variables_map.count("bitrate"))
