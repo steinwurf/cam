@@ -17,7 +17,7 @@
 #include <n4lu/to_annex_b_nalus.hpp>
 
 #include <c4m/linux/linux.hpp>
-#include <c4m/linux/layers.hpp>
+#include <c4m/linux/camera.hpp>
 #include <c4m/linux/find_camera.hpp>
 
 #include <c4m/split_capture_on_nalu_type.hpp>
@@ -182,10 +182,6 @@ private:
             m_camera->try_request_i_frame_period(
                 get_option<uint32_t>(m_variables_map, "i_frame_period"));
         }
-
-        // Write header
-        write_to_socket<uint32_t>(*m_client, m_camera->width());
-        write_to_socket<uint32_t>(*m_client, m_camera->height());
 
         m_camera->try_start_streaming();
 

@@ -30,7 +30,9 @@ namespace linux
             Super::open(device, error);
 
             if (error)
+            {
                 return;
+            }
 
             memset(&m_format, 0, sizeof(m_format));
 

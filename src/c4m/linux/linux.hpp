@@ -27,8 +27,6 @@
 
 #include "scoped_file_descriptor.hpp"
 
-#include "ioctl.hpp"
-
 #include "has_streaming_io_ioctls.hpp"
 #include "print_v4l2_format.hpp"
 

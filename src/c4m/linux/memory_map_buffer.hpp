@@ -7,7 +7,12 @@
 
 #pragma once
 
+#include "../error.hpp"
+
 #include <sys/mman.h>
+
+#include <cassert>
+#include <cstdint>
 
 namespace c4m
 {

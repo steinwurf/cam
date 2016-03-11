@@ -15,7 +15,7 @@
 #include <n4lu/to_annex_b_nalus.hpp>
 
 #include <c4m/linux/linux.hpp>
-#include <c4m/linux/layers.hpp>
+#include <c4m/linux/camera.hpp>
 #include <c4m/linux/find_camera.hpp>
 #include <c4m/split_capture_on_nalu_type.hpp>
 
@@ -91,10 +91,6 @@ void write_raw_capture(const char* device, const char* filename)
 ///    0                   1                   2                   3
 ///    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 ///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-///   |                           width                               |
-///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-///   |                           height                              |
-///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ///   |                       SPS timestamp                           |
 ///   |                                                               |
 ///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -125,9 +121,7 @@ void write_raw_capture(const char* device, const char* filename)
 /// end of file.
 ///
 /// Field     | size
-/// ---------------
-/// width     | uint32_t
-/// height    | uint32_t
+/// ----------+----------
 /// timestamp | uint64_t
 /// NALU size | uint32_t
 /// NALU data | NALU size
@@ -180,10 +174,6 @@ void write_custom_capture(const char* device, const char* filename)
     // calculate difference between two NALUs)
     uint64_t previous_timestamp = 0;
 
-    // Write header
-    write_to_file<uint32_t>(capture_file, camera.width());
-    write_to_file<uint32_t>(capture_file, camera.height());
-
     camera.try_start_streaming();
 
     uint32_t frames = 0;
@@ -228,7 +218,6 @@ int main(int argc, char* argv[])
 {
     (void) argc;
     (void) argv;
-
 
     auto camera_file = c4m::linux::find_camera();
 

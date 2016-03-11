@@ -60,11 +60,6 @@ int run_client(int argc, char* argv[])
 
         s.connect(endpoint);
 
-        uint32_t width = read_from_socket<uint32_t>(s);
-        uint32_t height = read_from_socket<uint32_t>(s);
-
-        std::cout << "w = " << width << " h = " << height << std::endl;
-
         // Counts the number of capture segments
         uint32_t frames = 0;
         while(1)
