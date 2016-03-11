@@ -13,6 +13,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <cstring>
 #include <system_error>
 
 namespace c4m

@@ -15,58 +15,6 @@ namespace c4m
 {
 namespace linux
 {
-    /// Globally Unique Identifier (GUID) for the extension code.
-    ///
-    /// Note: The layout of the GUID is specified in USB_Video_FAQ_1.5.pdf
-    ///       (section "Layout of a GUID Data Structure" p. 15)
-    ///
-    /// Layout (and example):
-    ///
-    /// +-----------------------------------+
-    /// |offset|Field |Size (bytes)|Example |
-    /// +-----------------------------------+
-    /// |0     |Data1 |4           |47504a4d|
-    /// +-----------------------------------+
-    /// |4     |Data2 |2           |0000    |
-    /// +-----------------------------------+
-    /// |6     |Data3 |2           |0010    |
-    /// +-----------------------------------+
-    /// |8     |Data4a|1           |80      |
-    /// +-----------------------------------+
-    /// |9     |Data4b|1           |00      |
-    /// +-----------------------------------+
-    /// |10    |Data4c|1           |00      |
-    /// +-----------------------------------+
-    /// |11    |Data4d|1           |aa      |
-    /// +-----------------------------------+
-    /// |12    |Data4e|1           |00      |
-    /// +-----------------------------------+
-    /// |13    |Data4f|1           |38      |
-    /// +-----------------------------------+
-    /// |14    |Data4g|1           |9b      |
-    /// +-----------------------------------+
-    /// |15    |Data4h|1           |71      |
-    /// +-----------------------------------+
-    ///
-    /// In the example given in the table above the GUID
-    /// {47504a4d-0000-0010-80-00-00-aa-00-38-9b-71} will have the
-    /// following little-endian byte-stream representation:
-    ///
-    /// {0x4d,0x4a,0x50,0x47,0x00,0x00,0x10,0x00,
-    ///  0x80,0x00,0x00,0xaa,0x00,0x38,0x9b,0x71}
-    ///
-    /// lsusb -d 046d:082d -d to get a list of XU
-    ///
-    /// The following is defined in:
-    ///     USB Device Class Definition for Video Devices: H.264 Payload.
-    ///     Revision: 1.00
-    ///     Appendix A (p. 43)
-    ///
-    static const uint8_t guid[] = {0x41, 0x76, 0x9e, 0xa2,
-                                   0x04, 0xde, 0xe3, 0x47,
-                                   0x8b, 0x2b, 0xF4, 0x34,
-                                   0x1A, 0xFF, 0x00, 0x3B};
-
     // Next up http://www.linux-usb.org/USB-guide/x75.html
     template<class Super>
     class create_udev_device : public Super

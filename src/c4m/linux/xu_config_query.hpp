@@ -7,8 +7,11 @@
 
 #pragma once
 
+#include "uvcx_video_config.hpp"
+
 #include <cassert>
 #include <cstdint>
+#include <cstring>
 #include <system_error>
 
 namespace c4m
