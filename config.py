@@ -5,7 +5,7 @@ import urllib2
 import traceback
 import sys
 
-project_name = 'netc4m'
+project_name = 'cam'
 project_dependencies = \
     [
         'waf-tools',

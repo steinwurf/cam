@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
-APPNAME = 'c4m'
+APPNAME = 'cam'
 VERSION = '1.0.0'
 
 import waflib.extras.wurf_options
@@ -39,8 +39,8 @@ def resolve(ctx):
         major=3))
 
     ctx.add_dependency(resolve.ResolveVersion(
-        name='n4lu',
-        git_repository='bitbucket.org/steinwurf/n4lu.git',
+        name='nalu',
+        git_repository='gitlab.com/steinwurf/nalu.git',
         major=1))
 
     ctx.add_dependency(resolve.ResolveVersion(
