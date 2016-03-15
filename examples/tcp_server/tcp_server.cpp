@@ -27,6 +27,14 @@
 namespace ba = boost::asio;
 namespace bpo = boost::program_options;
 
+
+// Helper to write raw binary data to the socket
+void write_to_socket(ba::ip::tcp::socket& socket,
+                     const uint8_t* data, uint32_t size)
+{
+    ba::write(socket, ba::buffer(data, size));
+}
+
 /// Helper to write types to the socket
 template<class T>
 void write_to_socket(ba::ip::tcp::socket& socket, T value)
@@ -35,14 +43,7 @@ void write_to_socket(ba::ip::tcp::socket& socket, T value)
 
     sak::big_endian::put<T>(value, data);
 
-    ba::write(socket, ba::buffer(data, sizeof(T)));
-}
-
-// Helper to write raw binary data to the socket
-void write_to_socket(ba::ip::tcp::socket& socket,
-                     const uint8_t* data, uint32_t size)
-{
-    ba::write(socket, ba::buffer(data, size));
+    write_to_socket(socket, data, sizeof(T));
 }
 
 /// Write data to the socket in the same format as given for the
@@ -52,12 +53,14 @@ class tcp_server
 {
 public:
 
-    tcp_server(ba::io_service& io_service, const std::string& camera,
-                  const bpo::variables_map& vm)
+    tcp_server(
+        ba::io_service& io_service,
+        const std::string& camera_device,
+        const bpo::variables_map& vm)
         : m_io_service(io_service),
           m_acceptor(io_service,
                      ba::ip::tcp::endpoint(ba::ip::tcp::v4(), 54321)),
-          m_camera(camera),
+          m_camera_device(camera_device),
           m_variables_map(vm)
     {
         do_accept();
@@ -65,115 +68,119 @@ public:
 
 private:
 
-    void do_stream(ba::ip::tcp::socket client)
-    {
-
-         c4m::linux::camera<c4m::default_features> camera;
-         camera.try_open(m_camera.c_str());
-
-         std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
-
-         std::cout << "Requesting resolution: " << std::endl;
-         camera.try_request_resolution(400,500);
-         std::cout << "w = " << camera.width() << " "
-                   << "h = " << camera.height() << std::endl;
-
-
-         if (m_variables_map.count("i_frame_period"))
-         {
-             camera.try_request_i_frame_period(
-                 get_option<uint32_t>(m_variables_map, "i_frame_period"));
-         }
-
-         // The time stamp of the previous captured NALU (needed to
-         // calculate difference between two NALUs)
-         uint64_t previous_timestamp = 0;
-
-         camera.try_start_streaming();
-
-         if (m_variables_map.count("bitrate"))
-         {
-             auto bitrate = get_option<uint32_t>(m_variables_map, "bitrate");
-             camera.try_request_bitrates(bitrate, bitrate);
-         }
-
-        // Counts the number of NALUs
-        uint32_t frames = 0;
-        uint32_t diff_timestamp = 0;
-        while(1)
-        {
-            auto data = camera.try_capture();
-            assert(data);
-
-            // check if the timestamp is valid.
-            // The timestamp is expected to be higher than the last.
-            // The Logitech 920c camera can some times output timeframes which
-            // are 400 times higher than the previous. This have been observed
-            // when keeping ones hand above the camera lense for ~30 seconds.
-            // This is obviously bogus, and hence we check that the timestamp
-            // is no more than 10 times larger than the last.
-            if (data.m_timestamp < previous_timestamp ||
-                (previous_timestamp != 0 &&
-                data.m_timestamp / previous_timestamp > 10))
-            {
-                std::cout << "Drop capture data due to timestamp issue"
-                          << " m_timestamp: " << data.m_timestamp
-                          << std::endl;
-                continue;
-                // instead of throwing away the capture data one could instead
-                // try to correct it by using the previous timestamp increment.
-                // data.m_timestamp = previous_timestamp + diff_timestamp;
-            }
-
-            assert(data.m_timestamp >= previous_timestamp);
-
-            diff_timestamp = data.m_timestamp - previous_timestamp;
-            previous_timestamp = data.m_timestamp;
-
-            auto split_captures = c4m::split_capture_on_nalu_type(data);
-            for (const auto& c : split_captures)
-            {
-                std::cout << frames << ": " << c << " diff_timestamp = "
-                          << diff_timestamp << std::endl;
-
-                auto nalus = n4lu::to_annex_b_nalus(c.m_data, c.m_size);
-
-                for (const auto& nalu : nalus)
-                {
-                    std::cout << "  " << nalu << std::endl;
-                    assert(nalu);
-                }
-
-                write_to_socket<uint64_t>(client, c.m_timestamp);
-                write_to_socket<uint32_t>(client, c.m_size);
-                write_to_socket(client, c.m_data, c.m_size);
-
-                ++frames;
-            }
-        }
-    }
-
-
     void do_accept()
     {
         auto server_endpoint = m_acceptor.local_endpoint();
         std::cout << "Server on: " << server_endpoint << std::endl;
-        std::cout << "Camera: " << m_camera << std::endl;
+        std::cout << "Camera: " << m_camera_device << std::endl;
 
-        while(1)
+        auto client_socket = ba::ip::tcp::socket(m_io_service);
+
+        m_acceptor.accept(client_socket);
+
+        // Counts the number of NALUs
+        m_frames = 0;
+        m_diff_timestamp = 0;
+        m_previous_timestamp = 0;
+
+        m_client = std::unique_ptr<ba::ip::tcp::socket>(
+            new ba::ip::tcp::socket(std::move(client_socket)));
+
+        m_camera = std::unique_ptr<c4m::linux::camera<c4m::default_features>>(
+            new c4m::linux::camera<c4m::default_features>);
+        m_camera->set_io_service(&m_io_service);
+
+        m_camera->try_open(m_camera_device.c_str());
+
+        std::cout << "Pixelformat: " << m_camera->pixelformat() << std::endl;
+
+        std::cout << "Requesting resolution: " << std::endl;
+        m_camera->try_request_resolution(400, 500);
+        std::cout << "w = " << m_camera->width() << " "
+                  << "h = " << m_camera->height() << std::endl;
+
+        if (m_variables_map.count("i_frame_period"))
         {
-            auto client_socket = ba::ip::tcp::socket(m_io_service);
+            m_camera->try_request_i_frame_period(
+                get_option<uint32_t>(m_variables_map, "i_frame_period"));
+        }
 
-            m_acceptor.accept(client_socket);
+        m_camera->try_start_streaming();
 
-            try
+        if (m_variables_map.count("bitrate"))
+        {
+            auto bitrate = get_option<uint32_t>(m_variables_map, "bitrate");
+            m_camera->try_request_bitrates(bitrate, bitrate);
+        }
+
+        m_camera->async_capture(std::bind(
+            &tcp_server::do_stream, this, std::placeholders::_1));
+    }
+
+    void do_stream(boost::system::error_code error)
+    {
+        if (error)
+        {
+            m_client.reset();
+            m_camera.reset();
+            m_io_service.post([&]{do_accept();});
+            /// @todo Fix so that it works later, now just crash and burn.
+            assert(0);
+            return;
+        }
+        do_read();
+        m_camera->async_capture(std::bind(
+            &tcp_server::do_stream, this, std::placeholders::_1));
+    }
+
+    void do_read()
+    {
+        assert(m_camera);
+        auto data = m_camera->try_capture();
+        assert(data);
+
+        // check if the timestamp is valid.
+        // The timestamp is expected to be higher than the last.
+        // The Logitech 920c camera can some times output timeframes which
+        // are 400 times higher than the previous. This have been observed
+        // when keeping ones hand above the camera lense for ~30 seconds.
+        // This is obviously bogus, and hence we check that the timestamp
+        // is no more than 10 times larger than the last.
+        if (data.m_timestamp < m_previous_timestamp)
+        {
+            return;
+        }
+
+        if (m_previous_timestamp != 0 &&
+            data.m_timestamp / m_previous_timestamp > 10)
+        {
+            return;
+        }
+
+        assert(data.m_timestamp >= m_previous_timestamp);
+
+        m_diff_timestamp = data.m_timestamp - m_previous_timestamp;
+        m_previous_timestamp = data.m_timestamp;
+
+        auto split_captures = c4m::split_capture_on_nalu_type(data);
+        for (const auto& c : split_captures)
+        {
+            std::cout << m_frames << ": " << c << " diff_timestamp = "
+                      << m_diff_timestamp << std::endl;
+
+            auto nalus = n4lu::to_annex_b_nalus(c.m_data, c.m_size);
+
+            for (const auto& nalu : nalus)
             {
-                do_stream(std::move(client_socket));
+                std::cout << "  " << nalu << std::endl;
+                assert(nalu);
             }
-            catch (std::exception& e)
-            {
-                std::cerr << "Exception: " << e.what() << "\n";
-            }
+
+            write_to_socket<uint64_t>(*m_client, c.m_timestamp);
+            write_to_socket<uint32_t>(*m_client, c.m_size);
+            write_to_socket(*m_client, c.m_data, c.m_size);
+
+            ++m_frames;
         }
     }
 
@@ -181,11 +188,17 @@ private:
 
     ba::io_service& m_io_service;
     ba::ip::tcp::acceptor m_acceptor;
-    std::string m_camera;
+    std::string m_camera_device;
     bpo::variables_map m_variables_map;
 
-};
+    std::unique_ptr<ba::ip::tcp::socket> m_client;
+    std::unique_ptr<c4m::linux::camera<c4m::default_features>> m_camera;
 
+    // Counts the number of NALUs
+    uint32_t m_frames = 0;
+    uint32_t m_diff_timestamp = 0;
+    uint32_t m_previous_timestamp = 0;
+};
 
 int main(int argc, char* argv[])
 {
