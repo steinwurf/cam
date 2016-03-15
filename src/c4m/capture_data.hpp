@@ -66,7 +66,4 @@ namespace c4m
 
         return os;
     }
-
-
-
 }

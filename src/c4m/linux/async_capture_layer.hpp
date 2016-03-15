@@ -27,8 +27,8 @@ namespace linux
 
         /// @tparam ReadHandler type usable in expression such as:
         ///
-        ///             ReadHandler rh;
-        ///             rh(boost::system::error_code());
+        ///             ReadHandler read_handler;
+        ///             read_handler(boost::system::error_code());
         ///
         template<class ReadHandler>
         void async_capture(ReadHandler read_handler)
@@ -49,8 +49,6 @@ namespace linux
                         new boost::asio::posix::stream_descriptor(
                             *m_io, fd.native_handle()));
             }
-
-
 
             assert(m_io_descriptor);
 
