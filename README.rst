@@ -1,5 +1,5 @@
 ===
-c4m
+cam
 ===
 
 The purpose of this library is to make it easy to work with USB webcams.

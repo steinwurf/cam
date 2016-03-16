@@ -5,7 +5,7 @@
 // The copyright notice above does not evidence any
 // actual or intended publication of such source code.
 
-#include <c4m/linux/scoped_file_descriptor.hpp>
+#include <cam/linux/scoped_file_descriptor.hpp>
 
 #include <gtest/gtest.h>
 

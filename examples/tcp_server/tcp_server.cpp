@@ -14,13 +14,13 @@
 
 
 #include <sak/convert_endian.hpp>
-#include <n4lu/to_annex_b_nalus.hpp>
+#include <nalu/to_annex_b_nalus.hpp>
 
-#include <c4m/linux/linux.hpp>
-#include <c4m/linux/camera.hpp>
-#include <c4m/linux/find_camera.hpp>
+#include <cam/linux/linux.hpp>
+#include <cam/linux/camera.hpp>
+#include <cam/linux/find_camera.hpp>
 
-#include <c4m/split_capture_on_nalu_type.hpp>
+#include <cam/split_capture_on_nalu_type.hpp>
 
 #include "get_option.hpp"
 
@@ -86,8 +86,8 @@ private:
         m_client = std::unique_ptr<ba::ip::tcp::socket>(
             new ba::ip::tcp::socket(std::move(client_socket)));
 
-        m_camera = std::unique_ptr<c4m::linux::camera<c4m::default_features>>(
-            new c4m::linux::camera<c4m::default_features>);
+        m_camera = std::unique_ptr<cam::linux::camera<cam::default_features>>(
+            new cam::linux::camera<cam::default_features>);
         m_camera->set_io_service(&m_io_service);
 
         m_camera->try_open(m_camera_device.c_str());
@@ -162,13 +162,13 @@ private:
         m_diff_timestamp = data.m_timestamp - m_previous_timestamp;
         m_previous_timestamp = data.m_timestamp;
 
-        auto split_captures = c4m::split_capture_on_nalu_type(data);
+        auto split_captures = cam::split_capture_on_nalu_type(data);
         for (const auto& c : split_captures)
         {
             std::cout << m_frames << ": " << c << " diff_timestamp = "
                       << m_diff_timestamp << std::endl;
 
-            auto nalus = n4lu::to_annex_b_nalus(c.m_data, c.m_size);
+            auto nalus = nalu::to_annex_b_nalus(c.m_data, c.m_size);
 
             for (const auto& nalu : nalus)
             {
@@ -192,7 +192,7 @@ private:
     bpo::variables_map m_variables_map;
 
     std::unique_ptr<ba::ip::tcp::socket> m_client;
-    std::unique_ptr<c4m::linux::camera<c4m::default_features>> m_camera;
+    std::unique_ptr<cam::linux::camera<cam::default_features>> m_camera;
 
     // Counts the number of NALUs
     uint32_t m_frames = 0;
@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
     {
         ba::io_service io_service;
 
-        auto camera = c4m::linux::find_camera();
+        auto camera = cam::linux::find_camera();
 
         if (camera.empty())
         {

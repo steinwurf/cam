@@ -5,14 +5,14 @@
 // The copyright notice above does not evidence any
 // actual or intended publication of such source code.
 
-#include <c4m/linux/camera.hpp>
+#include <cam/linux/camera.hpp>
 
 int run_uvc(int argc, char* argv[])
 {
     (void) argc;
     (void) argv;
 
-    c4m::linux::camera<c4m::default_features> s;
+    cam::linux::camera<cam::default_features> s;
 
     s.try_open("/dev/video1");
 
