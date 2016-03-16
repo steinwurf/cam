@@ -4,5 +4,5 @@
 bld.program(features='cxx',
             source='write_file.cpp',
             target='write_file',
-            use=['c4m_includes', 'boost_includes', 'boost_system', 'sak',
+            use=['cam_includes', 'boost_includes', 'boost_system', 'sak',
                  'n4lu_includes'])

@@ -14,10 +14,10 @@
 #include <sak/convert_endian.hpp>
 #include <n4lu/to_annex_b_nalus.hpp>
 
-#include <c4m/linux/linux.hpp>
-#include <c4m/linux/camera.hpp>
-#include <c4m/linux/find_camera.hpp>
-#include <c4m/split_capture_on_nalu_type.hpp>
+#include <cam/linux/linux.hpp>
+#include <cam/linux/camera.hpp>
+#include <cam/linux/find_camera.hpp>
+#include <cam/split_capture_on_nalu_type.hpp>
 
 /// Helper to write types to the file
 template<class T>
@@ -51,10 +51,10 @@ void write_raw_capture(const char* device, const char* filename)
     std::cout << "Raw capture file: " << filename << std::endl;
     std::cout << "Device: " << device << std::endl;
 
-    using features = c4m::default_features::
-        append<c4m::enable_trace>;
+    using features = cam::default_features::
+        append<cam::enable_trace>;
 
-    c4m::linux::camera<features> camera;
+    cam::linux::camera<features> camera;
     camera.try_open(device);
 
     std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
@@ -146,15 +146,15 @@ void write_custom_capture(const char* device, const char* filename)
     std::cout << "Custom capture file: " << filename << std::endl;
     std::cout << "Device: " << device << std::endl;
 
-    using features = c4m::default_features::
-        append<c4m::enable_trace>;
+    using features = cam::default_features::
+        append<cam::enable_trace>;
 
-    using camera_type = c4m::linux::camera<features>;
+    using camera_type = cam::linux::camera<features>;
     camera_type camera;
 
-    if (c4m::has_set_trace_callback<camera_type>::value)
+    if (cam::has_set_trace_callback<camera_type>::value)
     {
-        c4m::set_trace_callback(camera,
+        cam::set_trace_callback(camera,
             [](const std::string& zone, const std::string& msg)
             {
                 std::cout << zone << ":\n" << msg << std::endl;
@@ -191,7 +191,7 @@ void write_custom_capture(const char* device, const char* filename)
         assert(data.m_timestamp >= previous_timestamp);
         previous_timestamp = data.m_timestamp;
 
-        auto split_captures = c4m::split_capture_on_nalu_type(data);
+        auto split_captures = cam::split_capture_on_nalu_type(data);
 
         for (const auto& c : split_captures)
         {
@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
     (void) argc;
     (void) argv;
 
-    auto camera_file = c4m::linux::find_camera();
+    auto camera_file = cam::linux::find_camera();
 
     if (camera_file.empty())
     {

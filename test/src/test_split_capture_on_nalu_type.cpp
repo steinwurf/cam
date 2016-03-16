@@ -5,8 +5,8 @@
 // The copyright notice above does not evidence any
 // actual or intended publication of such source code.
 
-#include <c4m/split_capture_on_nalu_type.hpp>
-#include <c4m/capture_data.hpp>
+#include <cam/split_capture_on_nalu_type.hpp>
+#include <cam/capture_data.hpp>
 
 #include <vector>
 
@@ -19,9 +19,9 @@ TEST(test_split_capture_on_nalu_type, single_nalu)
         0x00, 0x00, 0x00, 0x01, 0x12, 0xab
     };
     uint32_t timestamp = 100;
-    auto capture_data = c4m::capture_data(
+    auto capture_data = cam::capture_data(
         nalu_data.data(), nalu_data.size(), timestamp);
-    auto nalus = c4m::split_capture_on_nalu_type(capture_data);
+    auto nalus = cam::split_capture_on_nalu_type(capture_data);
     EXPECT_EQ(1U, nalus.size());
 }
 
@@ -35,9 +35,9 @@ TEST(test_split_capture_on_nalu_type, multiple_nalu)
         0x00, 0x00, 0x00, 0x01, 0x12, 0xab
     };
     uint32_t timestamp = 100;
-    auto capture_data = c4m::capture_data(
+    auto capture_data = cam::capture_data(
        nalu_data.data(), nalu_data.size(), timestamp);
-    auto nalus = c4m::split_capture_on_nalu_type(capture_data);
+    auto nalus = cam::split_capture_on_nalu_type(capture_data);
     ///@todo fix?
     // EXPECT_EQ(4U, nalus.size());
 }
@@ -53,9 +53,9 @@ TEST(test_split_capture_on_nalu_type, alternate_startcode_size)
         0x00, 0x00, 0x00, 0x01, 0x12, 0xab
     };
     uint32_t timestamp = 100;
-    auto capture_data = c4m::capture_data(
+    auto capture_data = cam::capture_data(
         nalu_data.data(), nalu_data.size(), timestamp);
-    auto nalus = c4m::split_capture_on_nalu_type(capture_data);
+    auto nalus = cam::split_capture_on_nalu_type(capture_data);
     ///@todo fix?
     // EXPECT_EQ(4U, nalus.size());
 }

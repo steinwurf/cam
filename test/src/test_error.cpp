@@ -5,6 +5,6 @@
 // The copyright notice above does not evidence any
 // actual or intended publication of such source code.
 
-#include <c4m/error.hpp>
+#include <cam/error.hpp>
 
 /// @file test_error.cpp Nothing to test here error is just an enum class
