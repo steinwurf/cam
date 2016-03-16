@@ -96,19 +96,19 @@ def build(bld):
 
     bld.env.append_unique(
         'DEFINES_STEINWURF_VERSION',
-        'STEINWURF_C4M_VERSION="{}"'.format(
+        'STEINWURF_CAM_VERSION="{}"'.format(
             VERSION))
 
     # bld.program(
     #     features='cxx',
-    #     source=bld.path.ant_glob('src/netc4m/**/*.cpp'),
-    #     target='netc4m',
+    #     source=bld.path.ant_glob('src/netcam/**/*.cpp'),
+    #     target='netcam',
     #     use=['boost_includes', 'boost_system', 'sak'],
     #     export_includes=['src'])
 
     bld(#includes=['src'],
         export_includes=['src'],
-        name='c4m_includes',
+        name='cam_includes',
         use=['meta_includes', 'UDEV', 'USB-1.0'])
 
 

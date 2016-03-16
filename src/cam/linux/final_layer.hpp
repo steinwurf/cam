@@ -5,7 +5,13 @@
 // The copyright notice above does not evidence any
 // actual or intended publication of such source code.
 
-#include <cam/is_error_code_enum.hpp>
+#pragma once
 
-/// @file test_is_error_code_enum.hpp Nothing to test here
-///       is_error_code_enum is just a template specialization trait.
+namespace cam
+{
+namespace linux
+{
+    class final_layer
+    { };
+}
+}

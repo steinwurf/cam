@@ -5,7 +5,7 @@
 // The copyright notice above does not evidence any
 // actual or intended publication of such source code.
 
-#include <c4m/capture_data.hpp>
+#include <cam/capture_data.hpp>
 
 #include <gtest/gtest.h>
 
