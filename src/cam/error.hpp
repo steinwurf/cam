@@ -16,8 +16,8 @@ namespace cam
     /// http://phk.freebsd.dk/time/20141116.html
     enum class error
     {
-        #define cam_ERROR_TAG(id,msg) id,
+        #define CAM_ERROR_TAG(id,msg) id,
         #include "error_tags.hpp"
-        #undef cam_ERROR_TAG
+        #undef CAM_ERROR_TAG
     };
 }

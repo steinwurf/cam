@@ -31,9 +31,9 @@ namespace cam
         {
             switch(static_cast<error>(ev))
             {
-                #define cam_ERROR_TAG(id,msg) case error::id: return msg;
+                #define CAM_ERROR_TAG(id,msg) case error::id: return msg;
                 #include "error_tags.hpp"
-                #undef cam_ERROR_TAG
+                #undef CAM_ERROR_TAG
             }
 
             assert(0 && "Invalid error code received!");
