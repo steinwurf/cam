@@ -15,8 +15,8 @@
 #include <boost/bind.hpp>
 #include <boost/array.hpp>
 
-#include <n4lu/nalu_type_from_header.hpp>
-#include <n4lu/nalu_type_to_string.hpp>
+#include <nalu/nalu_type_from_header.hpp>
+#include <nalu/nalu_type_to_string.hpp>
 
 namespace ba = boost::asio;
 
@@ -47,7 +47,7 @@ public:
         request_stream << "OPTIONS rtsp://" << m_ip << ":" << m_port
                        << "/" << m_location << " RTSP/1.0\r\n";
         request_stream << "CSeq: 2\r\n";
-        request_stream << "User-Agent: c4m\r\n";
+        request_stream << "User-Agent: cam\r\n";
         request_stream << "\r\n";
 
         ba::write(m_tcp_socket, request);
@@ -69,7 +69,7 @@ public:
         request_stream << "DESCRIBE rtsp://" << m_ip << ":" << m_port
                        << "/" << m_location << " RTSP/1.0\r\n";
         request_stream << "CSeq: 3\r\n";
-        request_stream << "User-Agent: c4m\r\n";
+        request_stream << "User-Agent: cam\r\n";
         request_stream << "\r\n";
 
         ba::write(m_tcp_socket, request);
@@ -95,7 +95,7 @@ public:
         ///@todo fix location
         request_stream << "SETUP rtsp://" << m_ip << "/rtpstream/config5/AVCESEnc RTSP/1.0\r\n";
         request_stream << "CSeq: 4\r\n";
-        request_stream << "User-Agent: c4m\r\n";
+        request_stream << "User-Agent: cam\r\n";
         ///@todo fix client port range
         request_stream << "Transport: RTP/AVP;unicast;client_port=33096-33097\r\n";
         request_stream << "\r\n";
@@ -157,7 +157,7 @@ public:
         request_stream << "PLAY rtsp://" << m_ip << ":" << m_port
                        << "/" << m_location << " RTSP/1.0\r\n";
         request_stream << "CSeq: 5\r\n";
-        request_stream << "User-Agent: c4m\r\n";
+        request_stream << "User-Agent: cam\r\n";
         request_stream << "Session: " << m_session << "\r\n";
         request_stream << "Range: npt=0.000-\r\n";
         request_stream << "\r\n";
@@ -200,7 +200,7 @@ public:
         request_stream << "TEARDOWN rtsp://" << m_ip << ":" << m_port
                        << "/" << m_location << " RTSP/1.0\r\n";
         request_stream << "CSeq: 7\r\n";
-        request_stream << "User-Agent: c4m\r\n";
+        request_stream << "User-Agent: cam\r\n";
         request_stream << "Session: " << m_session << "\r\n";
         request_stream << "\r\n";
 
@@ -299,7 +299,7 @@ private:
     {
         uint32_t byte_offset = 0;
         uint8_t nalu;
-        n4lu::nalu_type nalu_type;
+        nalu::nalu_type nalu_type;
         {
             uint8_t byte = data[byte_offset];
 
@@ -308,15 +308,15 @@ private:
                 (get_bit(byte, 1) << 6) |
                 (get_bit(byte, 2) << 5);
 
-            nalu_type = n4lu::nalu_type_from_header(
+            nalu_type = nalu::nalu_type_from_header(
                 (get_bit(byte, 3) << 4) |
                 (get_bit(byte, 4) << 3) |
                 (get_bit(byte, 5) << 2) |
                 (get_bit(byte, 6) << 1) |
                 (get_bit(byte, 7) << 0));
-            std::cout << n4lu::nalu_type_to_string(nalu_type) << std::endl;
-            if (nalu_type == n4lu::nalu_type::sequence_parameter_set ||
-                nalu_type == n4lu::nalu_type::picture_parameter_set)
+            std::cout << nalu::nalu_type_to_string(nalu_type) << std::endl;
+            if (nalu_type == nalu::nalu_type::sequence_parameter_set ||
+                nalu_type == nalu::nalu_type::picture_parameter_set)
             {
                 result.push_back(0);
                 result.push_back(0);
@@ -336,7 +336,7 @@ private:
         {
             uint8_t byte = data[byte_offset];
             byte_offset += 1;
-            if (nalu_type == n4lu::nalu_type::unspecified28)
+            if (nalu_type == nalu::nalu_type::unspecified28)
             {
                 start = get_bit(byte, 0);
                 end = get_bit(byte, 1);

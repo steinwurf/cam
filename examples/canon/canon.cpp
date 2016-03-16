@@ -14,7 +14,7 @@
 #include <boost/array.hpp>
 #include <boost/program_options.hpp>
 #include <sak/convert_endian.hpp>
-#include <c4m/split_capture_on_nalu_type.hpp>
+#include <cam/split_capture_on_nalu_type.hpp>
 
 #include "get_option.hpp"
 #include "rtp_camera.hpp"
@@ -109,12 +109,12 @@ private:
             if (h264.size() == 0)
                 continue;
 
-            auto capture_data = c4m::capture_data(
+            auto capture_data = cam::capture_data(
                 h264.data(), h264.size(), timestamp);
 
             diff_timestamp = timestamp - previous_timestamp;
             previous_timestamp = timestamp;
-            auto split_captures = c4m::split_capture_on_nalu_type(capture_data);
+            auto split_captures = cam::split_capture_on_nalu_type(capture_data);
             for (const auto& c : split_captures)
             {
                 write_to_socket<uint64_t>(client, c.m_timestamp);
