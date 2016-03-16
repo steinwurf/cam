@@ -46,10 +46,10 @@ class tcp_server_rtp
 {
 public:
     tcp_server_rtp(
-        ba::io_service& io_service,
+        ba::io_service* io_service,
         const bpo::variables_map& vm)
         : m_io_service(io_service),
-          m_acceptor(io_service,
+          m_acceptor(*m_io_service,
                      ba::ip::tcp::endpoint(ba::ip::tcp::v4(), 54321)),
           m_variables_map(vm)
     {
@@ -65,7 +65,7 @@ private:
 
         while(1)
         {
-            auto client_socket = ba::ip::tcp::socket(m_io_service);
+            auto client_socket = ba::ip::tcp::socket(*m_io_service);
 
             m_acceptor.accept(client_socket);
             std::cout << "found one!" << std::endl;
@@ -82,44 +82,41 @@ private:
 
     void do_stream(ba::ip::tcp::socket client)
     {
-        rtp_camera camera(m_io_service);
         auto ip = get_option<std::string>(m_variables_map, "ip");
         auto port = get_option<std::string>(m_variables_map, "port");
-        camera.try_open(ip, port);
+        std::string location = "rtpstream/config5=u";
+        rtp_camera camera(m_io_service, ip, port, location);
+
+        camera.connect();
+        camera.describe();
+        camera.setup();
+        camera.play();
 
         // The time stamp of the previous captured NALU (needed to
         // calculate difference between two NALUs)
         uint64_t previous_timestamp = 0;
 
-        camera.try_start_streaming();
-
         // Counts the number of NALUs
         uint32_t frames = 0;
         uint32_t diff_timestamp = 0;
+
+        std::vector<uint8_t> h264;
+        uint32_t timestamp;
         while(1)
         {
-            uint32_t timestamp;
-            std::vector<uint8_t> h264;
-            camera.try_capture(h264, timestamp);
+            h264.clear();
+            camera.read(h264, timestamp);
             if (h264.size() == 0)
                 continue;
 
-            std::cout << "data " << h264.m_size << std::endl;
-            std::cout << (uint32_t)h264.m_data[0] << std::endl;
-            std::cout << (uint32_t)h264.m_data[1] << std::endl;
-            std::cout << (uint32_t)h264.m_data[2] << std::endl;
-            std::cout << (uint32_t)h264.m_data[3] << std::endl;
+            auto capture_data = c4m::capture_data(
+                h264.data(), h264.size(), timestamp);
 
             diff_timestamp = timestamp - previous_timestamp;
             previous_timestamp = timestamp;
-
-            auto split_captures =
-                c4m::split_capture_on_nalu_type<c4m::capture_data>(data);
+            auto split_captures = c4m::split_capture_on_nalu_type(capture_data);
             for (const auto& c : split_captures)
             {
-                std::cout << frames << ": " << c << " diff_timestamp = "
-                          << diff_timestamp << std::endl;
-
                 write_to_socket<uint64_t>(client, c.m_timestamp);
                 write_to_socket<uint32_t>(client, c.m_size);
                 write_to_socket(client, c.m_data, c.m_size);
@@ -127,11 +124,12 @@ private:
                 ++frames;
             }
         }
+        camera.teardown();
     }
 
 private:
 
-    ba::io_service& m_io_service;
+    ba::io_service* m_io_service;
     ba::ip::tcp::acceptor m_acceptor;
     bpo::variables_map m_variables_map;
 };
@@ -163,7 +161,7 @@ int main(int argc, char* argv[])
         {
             ba::io_service io_service;
 
-            tcp_server_rtp s(io_service, vm);
+            tcp_server_rtp s(&io_service, vm);
 
             io_service.run();
         }

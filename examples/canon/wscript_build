@@ -1,11 +1,11 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
-# bld.program(features='cxx',
-#             source='canon.cpp',
-#             target='canon',
-#             use=['boost_includes', 'boost_system', 'c4m_includes', 'boost_thread',
-#                  'n4lu_includes', 'sak_includes', 'boost_program_options'])
+bld.program(features='cxx',
+            source='canon.cpp',
+            target='canon',
+            use=['boost_includes', 'boost_system', 'c4m_includes', 'boost_thread',
+                 'n4lu_includes', 'sak_includes', 'boost_program_options'])
 
 bld.program(features='cxx',
             source='rtp_to_file.cpp',
