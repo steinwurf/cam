@@ -41,7 +41,7 @@ def resolve(ctx):
     ctx.add_dependency(resolve.ResolveVersion(
         name='nalu',
         git_repository='gitlab.com/steinwurf/nalu.git',
-        major=1))
+        major=2))
 
     ctx.add_dependency(resolve.ResolveVersion(
         name='meta',

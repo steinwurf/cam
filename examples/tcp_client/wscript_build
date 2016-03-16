@@ -6,4 +6,4 @@ bld.program(features='cxx',
             source='tcp_client.cpp',
             target='tcp_client',
             use=['boost_includes', 'boost_system', 'cam_includes',
-                 'sak_includes', 'n4lu_includes'])
+                 'sak_includes', 'nalu_includes'])

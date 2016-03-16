@@ -11,7 +11,7 @@
 #include <vector>
 #include <sstream>
 
-#include <n4lu/to_annex_b_nalus.hpp>
+#include <nalu/to_annex_b_nalus.hpp>
 
 #include "../trace_layer.hpp"
 #include "v4l2_timestamp_to_micro_seconds.hpp"
@@ -58,7 +58,7 @@ namespace linux
 
             ss << data << "\n";
 
-            auto nalus = n4lu::to_annex_b_nalus(data.m_data, data.m_size);
+            auto nalus = nalu::to_annex_b_nalus(data.m_data, data.m_size);
 
             for(const auto& nalu : nalus)
             {
