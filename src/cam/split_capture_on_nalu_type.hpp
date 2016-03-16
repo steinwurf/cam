@@ -9,7 +9,7 @@
 
 #include "capture_data.hpp"
 
-#include <n4lu/to_annex_b_nalus.hpp>
+#include <nalu/to_annex_b_nalus.hpp>
 
 #include <vector>
 
@@ -27,14 +27,14 @@ namespace cam
     {
         std::vector<capture_data> split_capture;
 
-        auto nalus = n4lu::to_annex_b_nalus(data.m_data, data.m_size);
+        auto nalus = nalu::to_annex_b_nalus(data.m_data, data.m_size);
 
         capture_data aggregate;
 
         for (const auto& nalu : nalus)
         {
-            if (nalu.m_type == n4lu::nalu_type::sequence_parameter_set ||
-                nalu.m_type == n4lu::nalu_type::picture_parameter_set)
+            if (nalu.m_type == nalu::nalu_type::sequence_parameter_set ||
+                nalu.m_type == nalu::nalu_type::picture_parameter_set)
             {
                 if (aggregate)
                 {

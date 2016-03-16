@@ -13,8 +13,8 @@
 
 #include <sak/convert_endian.hpp>
 
-#include <n4lu/to_annex_b_nalu.hpp>
-#include <n4lu/to_annex_b_nalus.hpp>
+#include <nalu/to_annex_b_nalu.hpp>
+#include <nalu/to_annex_b_nalus.hpp>
 
 namespace ba = boost::asio;
 
@@ -80,7 +80,7 @@ int run_client(int argc, char* argv[])
                       << "timestamp = " << timestamp << " "
                       << "sampletime = " << sample_time << std::endl;
 
-            auto nalus = n4lu::to_annex_b_nalus(buffer.data(), buffer.size());
+            auto nalus = nalu::to_annex_b_nalus(buffer.data(), buffer.size());
 
             for(const auto& nalu : nalus)
             {

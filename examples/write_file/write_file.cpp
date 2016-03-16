@@ -12,7 +12,7 @@
 #include <sstream>
 
 #include <sak/convert_endian.hpp>
-#include <n4lu/to_annex_b_nalus.hpp>
+#include <nalu/to_annex_b_nalus.hpp>
 
 #include <cam/linux/linux.hpp>
 #include <cam/linux/camera.hpp>
@@ -196,7 +196,7 @@ void write_custom_capture(const char* device, const char* filename)
         for (const auto& c : split_captures)
         {
 
-            auto nalus = n4lu::to_annex_b_nalus(c.m_data, c.m_size);
+            auto nalus = nalu::to_annex_b_nalus(c.m_data, c.m_size);
 
             write_to_file<uint64_t>(capture_file, c.m_timestamp);
             write_to_file<uint32_t>(capture_file, c.m_size);

@@ -5,4 +5,4 @@ bld.program(features='cxx',
             source='uvc_test.cpp',
             target='uvc_test',
             use=['boost_includes', 'boost_system', 'cam_includes',
-                 'sak_includes', 'n4lu_includes'])
+                 'sak_includes', 'nalu_includes'])

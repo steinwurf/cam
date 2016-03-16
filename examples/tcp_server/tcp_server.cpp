@@ -14,7 +14,7 @@
 
 
 #include <sak/convert_endian.hpp>
-#include <n4lu/to_annex_b_nalus.hpp>
+#include <nalu/to_annex_b_nalus.hpp>
 
 #include <cam/linux/linux.hpp>
 #include <cam/linux/camera.hpp>
@@ -168,7 +168,7 @@ private:
             std::cout << m_frames << ": " << c << " diff_timestamp = "
                       << m_diff_timestamp << std::endl;
 
-            auto nalus = n4lu::to_annex_b_nalus(c.m_data, c.m_size);
+            auto nalus = nalu::to_annex_b_nalus(c.m_data, c.m_size);
 
             for (const auto& nalu : nalus)
             {

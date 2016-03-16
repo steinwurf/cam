@@ -6,6 +6,7 @@ every change, see the Git log.
 
 Latest
 ------
+* Major: Update nalu to version 2.
 * Major: Rename c4m to cam.
 * Major: Use nalu repository on gitlab (renamed from n4lu)
 
