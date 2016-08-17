@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <memory>
 #include <libudev.h>
+#include <sys/stat.h>
 
 namespace cam
 {
