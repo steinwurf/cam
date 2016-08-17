@@ -92,13 +92,8 @@ private:
         camera.setup();
         camera.play();
 
-        // The time stamp of the previous captured NALU (needed to
-        // calculate difference between two NALUs)
-        uint64_t previous_timestamp = 0;
-
         // Counts the number of NALUs
         uint32_t frames = 0;
-        uint32_t diff_timestamp = 0;
 
         std::vector<uint8_t> h264;
         uint32_t timestamp;
@@ -112,8 +107,6 @@ private:
             auto capture_data = cam::capture_data(
                 h264.data(), h264.size(), timestamp);
 
-            diff_timestamp = timestamp - previous_timestamp;
-            previous_timestamp = timestamp;
             auto split_captures = cam::split_capture_on_nalu_type(capture_data);
             for (const auto& c : split_captures)
             {
