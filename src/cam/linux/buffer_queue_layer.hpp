@@ -57,7 +57,7 @@ namespace linux
             Super::stop_streaming(error);
 
             // Reset the buffers struct
-            m_is_enqueued.resize(0);
+            m_is_enqueued.clear();
         }
 
         /// Enqueue a specific buffer
@@ -66,7 +66,6 @@ namespace linux
         ///
         /// @param index The index of the buffer we wanr to enqueue
         /// @param error Error code will be set if an error occurs.
-        ///
         void enqueue_buffer(uint32_t index, std::error_code& error)
         {
             assert(!is_buffer_enqueued(index));

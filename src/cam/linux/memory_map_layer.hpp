@@ -37,7 +37,7 @@ namespace linux
             assert(!error);
 
             // Reset the buffers struct
-            m_buffers.resize(0);
+            m_buffers.clear();
         }
 
         /// Maps the buffers in the driver to user-space. If the mapping

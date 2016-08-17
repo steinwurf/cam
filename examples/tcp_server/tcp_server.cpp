@@ -9,196 +9,29 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <thread>
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 
-
-#include <sak/convert_endian.hpp>
-#include <nalu/to_annex_b_nalus.hpp>
-
-#include <cam/linux/linux.hpp>
 #include <cam/linux/camera.hpp>
+#include <cam/linux/linux.hpp>
 #include <cam/linux/find_camera.hpp>
 
-#include <cam/split_capture_on_nalu_type.hpp>
-
-#include "get_option.hpp"
+#include "cam_source.hpp"
+#include "wurf_it_source_server.hpp"
 
 namespace ba = boost::asio;
 namespace bpo = boost::program_options;
-
-
-// Helper to write raw binary data to the socket
-void write_to_socket(ba::ip::tcp::socket& socket,
-                     const uint8_t* data, uint32_t size)
+namespace
 {
-    ba::write(socket, ba::buffer(data, size));
+    void control_thread(boost::asio::io_service* io)
+    {
+        std::cout << "Press Enter to Quit ";
+        std::cin.ignore();
+        std::cout << "User Quit" << std::endl;
+        io->stop();
+    }
 }
-
-/// Helper to write types to the socket
-template<class T>
-void write_to_socket(ba::ip::tcp::socket& socket, T value)
-{
-    static uint8_t data[sizeof(T)];
-
-    sak::big_endian::put<T>(value, data);
-
-    write_to_socket(socket, data, sizeof(T));
-}
-
-/// Write data to the socket in the same format as given for the
-/// write_custom_capture(...) function in
-/// examples/write_file/write_file.cpp
-class tcp_server
-{
-public:
-
-    tcp_server(
-        ba::io_service& io_service,
-        const std::string& camera_device,
-        const bpo::variables_map& vm)
-        : m_io_service(io_service),
-          m_acceptor(io_service,
-                     ba::ip::tcp::endpoint(ba::ip::tcp::v4(), 54321)),
-          m_camera_device(camera_device),
-          m_variables_map(vm)
-    {
-        do_accept();
-    }
-
-private:
-
-    void do_accept()
-    {
-        auto server_endpoint = m_acceptor.local_endpoint();
-        std::cout << "Server on: " << server_endpoint << std::endl;
-        std::cout << "Camera: " << m_camera_device << std::endl;
-
-        auto client_socket = ba::ip::tcp::socket(m_io_service);
-
-        m_acceptor.accept(client_socket);
-
-        // Counts the number of NALUs
-        m_frames = 0;
-        m_diff_timestamp = 0;
-        m_previous_timestamp = 0;
-
-        m_client = std::unique_ptr<ba::ip::tcp::socket>(
-            new ba::ip::tcp::socket(std::move(client_socket)));
-
-        m_camera = std::unique_ptr<cam::linux::camera<cam::default_features>>(
-            new cam::linux::camera<cam::default_features>);
-        m_camera->set_io_service(&m_io_service);
-
-        m_camera->try_open(m_camera_device.c_str());
-
-        std::cout << "Pixelformat: " << m_camera->pixelformat() << std::endl;
-
-        std::cout << "Requesting resolution: " << std::endl;
-        m_camera->try_request_resolution(400, 500);
-        std::cout << "w = " << m_camera->width() << " "
-                  << "h = " << m_camera->height() << std::endl;
-
-        if (m_variables_map.count("i_frame_period"))
-        {
-            m_camera->try_request_i_frame_period(
-                get_option<uint32_t>(m_variables_map, "i_frame_period"));
-        }
-
-        m_camera->try_start_streaming();
-
-        if (m_variables_map.count("bitrate"))
-        {
-            auto bitrate = get_option<uint32_t>(m_variables_map, "bitrate");
-            m_camera->try_request_bitrates(bitrate, bitrate);
-        }
-
-        m_camera->async_capture(std::bind(
-            &tcp_server::do_stream, this, std::placeholders::_1));
-    }
-
-    void do_stream(boost::system::error_code error)
-    {
-        if (error)
-        {
-            m_client.reset();
-            m_camera.reset();
-            m_io_service.post([&]{do_accept();});
-            /// @todo Fix so that it works later, now just crash and burn.
-            assert(0);
-            return;
-        }
-        do_read();
-        m_camera->async_capture(std::bind(
-            &tcp_server::do_stream, this, std::placeholders::_1));
-    }
-
-    void do_read()
-    {
-        assert(m_camera);
-        auto data = m_camera->try_capture();
-        assert(data);
-
-        // check if the timestamp is valid.
-        // The timestamp is expected to be higher than the last.
-        // The Logitech 920c camera can some times output timeframes which
-        // are 400 times higher than the previous. This have been observed
-        // when keeping ones hand above the camera lense for ~30 seconds.
-        // This is obviously bogus, and hence we check that the timestamp
-        // is no more than 10 times larger than the last.
-        if (data.m_timestamp < m_previous_timestamp)
-        {
-            return;
-        }
-
-        if (m_previous_timestamp != 0 &&
-            data.m_timestamp / m_previous_timestamp > 10)
-        {
-            return;
-        }
-
-        assert(data.m_timestamp >= m_previous_timestamp);
-
-        m_diff_timestamp = data.m_timestamp - m_previous_timestamp;
-        m_previous_timestamp = data.m_timestamp;
-
-        auto split_captures = cam::split_capture_on_nalu_type(data);
-        for (const auto& c : split_captures)
-        {
-            std::cout << m_frames << ": " << c << " diff_timestamp = "
-                      << m_diff_timestamp << std::endl;
-
-            auto nalus = nalu::to_annex_b_nalus(c.m_data, c.m_size);
-
-            for (const auto& nalu : nalus)
-            {
-                std::cout << "  " << nalu << std::endl;
-                assert(nalu);
-            }
-
-            write_to_socket<uint64_t>(*m_client, c.m_timestamp);
-            write_to_socket<uint32_t>(*m_client, c.m_size);
-            write_to_socket(*m_client, c.m_data, c.m_size);
-
-            ++m_frames;
-        }
-    }
-
-private:
-
-    ba::io_service& m_io_service;
-    ba::ip::tcp::acceptor m_acceptor;
-    std::string m_camera_device;
-    bpo::variables_map m_variables_map;
-
-    std::unique_ptr<ba::ip::tcp::socket> m_client;
-    std::unique_ptr<cam::linux::camera<cam::default_features>> m_camera;
-
-    // Counts the number of NALUs
-    uint32_t m_frames = 0;
-    uint32_t m_diff_timestamp = 0;
-    uint32_t m_previous_timestamp = 0;
-};
 
 int main(int argc, char* argv[])
 {
@@ -223,10 +56,6 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-
-    while(1)
-    {
-
     try
     {
         ba::io_service io_service;
@@ -239,15 +68,19 @@ int main(int argc, char* argv[])
             return 1;
         }
 
+        cam_source cam(&io_service, camera, vm);
 
-        tcp_server s(io_service, camera, vm);
-
+        wurf_it_source_server<cam_source> source_server(&io_service, cam, 54321);
+        std::thread t(control_thread, &io_service);
+        source_server.start();
         io_service.run();
+        source_server.stop();
+        std::cout << "source stopped" << std::endl;
+        t.join();
     }
     catch (std::exception& e)
     {
         std::cerr << "Exception: " << e.what() << "\n";
-    }
     }
 
     return 0;
