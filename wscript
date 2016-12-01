@@ -34,11 +34,6 @@ def resolve(ctx):
         major=15))
 
     ctx.add_dependency(resolve.ResolveVersion(
-        name='vitus',
-        git_repository='bitbucket.org/steinwurf/vitus.git',
-        major=3))
-
-    ctx.add_dependency(resolve.ResolveVersion(
         name='nalu',
         git_repository='gitlab.com/steinwurf/nalu.git',
         major=2))
