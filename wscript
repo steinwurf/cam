@@ -29,22 +29,22 @@ def resolve(ctx):
         major=2))
 
     ctx.add_dependency(resolve.ResolveVersion(
-        name='sak',
-        git_repository='github.com/steinwurf/sak.git',
-        major=15))
+        name='meta',
+        git_repository='github.com/steinwurf/meta.git',
+        major=2))
 
     ctx.add_dependency(resolve.ResolveVersion(
         name='nalu',
         git_repository='gitlab.com/steinwurf/nalu.git',
         major=2))
 
-    ctx.add_dependency(resolve.ResolveVersion(
-        name='meta',
-        git_repository='github.com/steinwurf/meta.git',
-        major=2))
-
     # Internal dependencies
     if ctx.is_toplevel():
+
+        ctx.add_dependency(resolve.ResolveVersion(
+            name='endian',
+            git_repository='github.com/steinwurf/endian.git',
+            major=3))
 
         ctx.add_dependency(resolve.ResolveVersion(
             name='gtest',
@@ -94,18 +94,9 @@ def build(bld):
         'STEINWURF_CAM_VERSION="{}"'.format(
             VERSION))
 
-    # bld.program(
-    #     features='cxx',
-    #     source=bld.path.ant_glob('src/netcam/**/*.cpp'),
-    #     target='netcam',
-    #     use=['boost_includes', 'boost_system', 'sak'],
-    #     export_includes=['src'])
-
-    bld(#includes=['src'],
-        export_includes=['src'],
+    bld(export_includes=['src'],
         name='cam_includes',
-        use=['meta_includes', 'UDEV', 'USB-1.0'])
-
+        use=['meta_includes', 'boost_system', 'nalu_includes', 'UDEV', 'USB-1.0'])
 
     if bld.is_toplevel():
 

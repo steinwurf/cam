@@ -11,7 +11,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <sak/convert_endian.hpp>
+#include <endian/big_endian.hpp>
 #include <nalu/to_annex_b_nalus.hpp>
 
 #include <cam/linux/linux.hpp>
@@ -25,7 +25,7 @@ void write_to_file(std::fstream& file, T value)
 {
     static char buffer[sizeof(T)];
 
-    sak::big_endian::put<T>(value, (uint8_t*) buffer);
+    endian::big_endian::put<T>(value, (uint8_t*) buffer);
 
     file.write(buffer, sizeof(T));
 }
