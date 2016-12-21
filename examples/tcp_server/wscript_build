@@ -5,5 +5,5 @@ bld.program(features='cxx',
             source='tcp_server.cpp',
             target='tcp_server',
             use=['boost_includes', 'boost_system', 'cam_includes',
-                 'nalu_includes', 'sak_includes', 'boost_program_options',
+                 'endian_includes', 'boost_program_options',
                  'PTHREAD'])

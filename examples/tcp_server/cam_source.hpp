@@ -18,10 +18,6 @@
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 
-
-#include <sak/convert_endian.hpp>
-#include <nalu/to_annex_b_nalus.hpp>
-
 #include <cam/linux/linux.hpp>
 #include <cam/linux/camera.hpp>
 
@@ -134,17 +130,6 @@ private:
         auto split_captures = cam::split_capture_on_nalu_type(data);
         for (const auto& c : split_captures)
         {
-            std::cout << m_frames << ": " << c << " diff_timestamp = "
-                      << m_diff_timestamp << std::endl;
-
-            auto nalus = nalu::to_annex_b_nalus(c.m_data, c.m_size);
-
-            for (const auto& nalu : nalus)
-            {
-                std::cout << "  " << nalu << std::endl;
-                assert(nalu);
-            }
-
             std::vector<uint8_t> v(c.m_data, c.m_data + c.m_size);
             m_callback(v, c.m_timestamp);
 

@@ -24,12 +24,12 @@ namespace ba = boost::asio;
 namespace bpo = boost::program_options;
 namespace
 {
-    void control_thread(boost::asio::io_service* io)
+    void control_thread(bool* running, ba::io_service** io_service)
     {
-        std::cout << "Press Enter to Quit ";
         std::cin.ignore();
         std::cout << "User Quit" << std::endl;
-        io->stop();
+        *running = false;
+        (*io_service)->stop();
     }
 }
 
@@ -56,32 +56,41 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    try
+    bool running = true;
+    ba::io_service* io_service;
+    std::cout << "Press Enter to Quit " << std::endl;
+    std::thread t(control_thread, &running, &io_service);
+    while (running)
     {
-        ba::io_service io_service;
-
-        auto camera = cam::linux::find_camera();
-
-        if (camera.empty())
+        try
         {
-            std::cerr << "Error: No h264 capable camera found." << std::endl;
-            return 1;
+            ba::io_service io;
+            io_service = &io;
+
+            auto camera = cam::linux::find_camera();
+
+            if (camera.empty())
+            {
+                std::cerr << "Error: No h264 capable camera found." << std::endl;
+                return 1;
+            }
+
+            cam_source cam(&io, camera, vm);
+
+            wurf_it_source_server<cam_source> source_server(&io, cam, 54321);
+            source_server.set_on_error_callback(
+                std::bind([&io](){io.stop();}));
+            source_server.start();
+            std::cout << "Server started" << std::endl;
+            io.run();
+            std::cout << "Server stopped" << std::endl;
         }
-
-        cam_source cam(&io_service, camera, vm);
-
-        wurf_it_source_server<cam_source> source_server(&io_service, cam, 54321);
-        std::thread t(control_thread, &io_service);
-        source_server.start();
-        io_service.run();
-        source_server.stop();
-        std::cout << "source stopped" << std::endl;
-        t.join();
+        catch (std::exception& e)
+        {
+            std::cerr << "Exception: " << e.what() << "\n";
+        }
     }
-    catch (std::exception& e)
-    {
-        std::cerr << "Exception: " << e.what() << "\n";
-    }
+    t.join();
 
     return 0;
 }
