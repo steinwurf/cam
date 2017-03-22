@@ -6,6 +6,10 @@ every change, see the Git log.
 
 Latest
 ------
+* tbd
+
+2.0.0
+-----
 * Minor: Introduced endian as a internal dependency.
 * Major: Removed sak dependency
 * Minor: TCP server example now runs until stopped. Clients can now connect and
