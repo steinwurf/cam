@@ -1,9 +1,0 @@
-
-#! /usr/bin/env python
-# encoding: utf-8
-
-bld.program(features='cxx',
-            source='tcp_client.cpp',
-            target='tcp_client',
-            use=['boost_includes', 'boost_system', 'cam_includes',
-                 'sak_includes', 'nalu_includes'])

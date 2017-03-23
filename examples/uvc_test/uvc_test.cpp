@@ -14,7 +14,7 @@ int run_uvc(int argc, char* argv[])
 
     cam::linux::camera<cam::default_features> s;
 
-    s.try_open("/dev/video1");
+    s.try_open("/dev/video0");
 
     std::cout << "w = " << s.width() << " "
               << "h = " << s.height() << std::endl;
