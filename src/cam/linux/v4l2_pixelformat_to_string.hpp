@@ -17,7 +17,7 @@ namespace linux
     ///
     /// Docs: https://linuxtv.org/downloads/v4l-dvb-apis/vidioc-enum-fmt.html
     ///
-    std::string v4l2_pixelformat_to_string(uint32_t pixelformat)
+    inline std::string v4l2_pixelformat_to_string(uint32_t pixelformat)
     {
         char fourcc[] = {(char) (pixelformat & 0xff),
                          (char) ((pixelformat >> 8) & 0xff),
