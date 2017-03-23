@@ -57,7 +57,7 @@ namespace linux
         }
 
         /// @param io The io_service to use for the async operations
-        void set_io_service(boost::asio::io_service* io)
+        void set_io_service(std::shared_ptr<boost::asio::io_service> io)
         {
             assert(io != nullptr);
             assert(m_io == nullptr);
@@ -66,7 +66,7 @@ namespace linux
 
     private:
 
-        boost::asio::io_service* m_io = nullptr;
+        std::shared_ptr<boost::asio::io_service> m_io;
         std::unique_ptr<boost::asio::posix::stream_descriptor> m_io_descriptor;
 
     };

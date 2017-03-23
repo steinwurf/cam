@@ -28,8 +28,8 @@ public:
 
 public:
 
-    wurf_it_source_server(ba::io_service* io, Source& source, uint16_t port):
-        m_io(io),
+    wurf_it_source_server(std::shared_ptr<boost::asio::io_service> io_service, Source& source, uint16_t port):
+        m_io(io_service),
         m_source(source),
         m_port(port),
         m_acceptor(*m_io)
@@ -175,7 +175,7 @@ private:
 
 private:
 
-    ba::io_service* m_io;
+    std::shared_ptr<boost::asio::io_service> m_io;
     Source& m_source;
     uint16_t m_port;
     ba::ip::tcp::acceptor m_acceptor;

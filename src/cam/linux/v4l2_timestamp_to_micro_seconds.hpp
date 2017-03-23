@@ -13,7 +13,7 @@ namespace cam
 {
 namespace linux
 {
-    uint64_t v4l2_timestamp_to_micro_seconds(const v4l2_buffer& buffer)
+    inline uint64_t v4l2_timestamp_to_micro_seconds(const v4l2_buffer& buffer)
     {
 
         auto clock_type = buffer.flags & V4L2_BUF_FLAG_TIMESTAMP_MASK;

@@ -35,7 +35,7 @@ public:
 public:
 
     cam_source(
-        boost::asio::io_service* io_service,
+        std::shared_ptr<boost::asio::io_service> io_service,
         const std::string& camera_device,
         const boost::program_options::variables_map& vm):
         m_io_service(io_service),
@@ -139,7 +139,7 @@ private:
 
 private:
 
-    boost::asio::io_service* m_io_service;
+    std::shared_ptr<boost::asio::io_service> m_io_service;
     std::string m_camera_device;
     boost::program_options::variables_map m_variables_map;
 

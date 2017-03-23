@@ -13,7 +13,7 @@
 namespace cam
 {
     /// @return an error_code with beem errors
-    std::error_code make_error_code(error e)
+    inline std::error_code make_error_code(error e)
     {
         return std::error_code(static_cast<int>(e), error_category::instance());
     }
