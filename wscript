@@ -103,8 +103,6 @@ def build(bld):
         # Only build tests when executed from the top-level wscript,
         # i.e. not when included as a dependency
         bld.recurse('test')
-        bld.recurse('examples/tcp_server')
-        bld.recurse('examples/tcp_client')
         bld.recurse('examples/write_file')
         bld.recurse('examples/uvc_test')
         bld.recurse('examples/canon')
