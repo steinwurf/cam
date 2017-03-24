@@ -6,7 +6,7 @@ every change, see the Git log.
 
 Latest
 ------
-* tbd
+* Major: Use shared_ptr io_service instead of raw pointer.
 
 2.0.0
 -----
