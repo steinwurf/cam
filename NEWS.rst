@@ -6,6 +6,11 @@ every change, see the Git log.
 
 Latest
 ------
+* Minor: Added ``to_vector`` member function on ``capture_data``.
+* Major: Change io_service from being a shared_ptr to being a raw pointer.
+
+4.0.0
+-----
 * Major: Use new waf.
 * Major: Remove sak dependencies,
 * Major: Update remaining dependencies.
