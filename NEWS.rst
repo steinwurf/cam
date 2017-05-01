@@ -6,7 +6,9 @@ every change, see the Git log.
 
 Latest
 ------
-* tbd
+* Major: Use new waf.
+* Major: Remove sak dependencies,
+* Major: Update remaining dependencies.
 
 3.0.0
 -----
