@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cassert>
 #include <ostream>
+#include <vector>
 
 namespace cam
 {
@@ -38,6 +39,11 @@ namespace cam
                 return false;
 
             return true;
+        }
+
+        std::vector<uint8_t> to_vector() const
+        {
+            return std::vector<uint8_t>(m_data, m_data + m_size);
         }
 
         /// Pointer to the captured memory buffer
