@@ -1,0 +1,44 @@
+[
+    {
+        "name": "waf-tools",
+        "resolver": "git",
+        "method": "semver",
+        "major": 4,
+        "sources": ["github.com/steinwurf/waf-tools.git"]
+    },
+    {
+        "name": "boost",
+        "resolver": "git",
+        "method": "semver",
+        "major": 3,
+        "sources": ["github.com/steinwurf/boost.git"]
+    },
+    {
+        "name": "nalu",
+        "resolver": "git",
+        "method": "semver",
+        "major": 3,
+        "sources": ["gitlab.com/steinwurf/nalu.git"]
+    },
+    {
+        "name": "gtest",
+        "resolver": "git",
+        "method": "semver",
+        "major": 4,
+        "sources": ["github.com/steinwurf/gtest.git"]
+    },
+    {
+        "name": "meta",
+        "resolver": "git",
+        "method": "semver",
+        "major": 3,
+        "sources": ["github.com/steinwurf/meta.git"]
+    },
+    {
+        "name": "endian",
+        "resolver": "git",
+        "method": "semver",
+        "major": 4,
+        "sources": ["github.com/steinwurf/endian.git"]
+    }
+]

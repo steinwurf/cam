@@ -4,57 +4,7 @@
 APPNAME = 'cam'
 VERSION = '3.0.0'
 
-import waflib.extras.wurf_options
-
-
-def options(opt):
-
-    opt.load('wurf_common_tools')
-
-
-def resolve(ctx):
-
-    import waflib.extras.wurf_dependency_resolve as resolve
-
-    ctx.load('wurf_common_tools')
-
-    ctx.add_dependency(resolve.ResolveVersion(
-        name='waf-tools',
-        git_repository='github.com/steinwurf/waf-tools.git',
-        major=3))
-
-    ctx.add_dependency(resolve.ResolveVersion(
-        name='boost',
-        git_repository='github.com/steinwurf/boost.git',
-        major=2))
-
-    ctx.add_dependency(resolve.ResolveVersion(
-        name='meta',
-        git_repository='github.com/steinwurf/meta.git',
-        major=2))
-
-    ctx.add_dependency(resolve.ResolveVersion(
-        name='nalu',
-        git_repository='gitlab.com/steinwurf/nalu.git',
-        major=2))
-
-    # Internal dependencies
-    if ctx.is_toplevel():
-
-        ctx.add_dependency(resolve.ResolveVersion(
-            name='endian',
-            git_repository='github.com/steinwurf/endian.git',
-            major=3))
-
-        ctx.add_dependency(resolve.ResolveVersion(
-            name='gtest',
-            git_repository='github.com/steinwurf/gtest.git',
-            major=3))
-
-
 def configure(conf):
-
-    conf.load("wurf_common_tools")
 
     if conf.is_mkspec_platform('linux'):
 
@@ -87,16 +37,18 @@ def configure(conf):
 
 def build(bld):
 
-    bld.load("wurf_common_tools")
-
     bld.env.append_unique(
         'DEFINES_STEINWURF_VERSION',
-        'STEINWURF_CAM_VERSION="{}"'.format(
-            VERSION))
+        'STEINWURF_CAM_VERSION="{}"'.format(VERSION))
 
     bld(export_includes=['src'],
         name='cam_includes',
-        use=['meta_includes', 'boost_system', 'nalu_includes', 'UDEV', 'USB-1.0'])
+        use=[
+            'meta_includes',
+            'boost_system',
+            'nalu_includes',
+            'UDEV',
+            'USB-1.0'])
 
     if bld.is_toplevel():
 
