@@ -13,7 +13,7 @@
 #include <boost/bind.hpp>
 #include <boost/array.hpp>
 #include <boost/program_options.hpp>
-#include <sak/convert_endian.hpp>
+#include <endian/big_endian.hpp>
 #include <cam/split_capture_on_nalu_type.hpp>
 
 #include "get_option.hpp"
@@ -35,7 +35,7 @@ void write_to_socket(ba::ip::tcp::socket& socket, T value)
 {
     static uint8_t data[sizeof(T)];
 
-    sak::big_endian::put<T>(value, data);
+    endian::big_endian::put<T>(value, data);
     write_to_socket(socket, data, sizeof(T));
 }
 
