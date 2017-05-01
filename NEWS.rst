@@ -6,6 +6,10 @@ every change, see the Git log.
 
 Latest
 ------
+* tbd
+
+5.0.0
+-----
 * Minor: Added ``to_vector`` member function on ``capture_data``.
 * Major: Change io_service from being a shared_ptr to being a raw pointer.
 
