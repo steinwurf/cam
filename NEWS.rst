@@ -6,7 +6,7 @@ every change, see the Git log.
 
 Latest
 ------
-* tbd
+* Major: Updated to nalu version 4.
 
 5.0.0
 -----

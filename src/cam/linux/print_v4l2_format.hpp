@@ -7,7 +7,7 @@
 
 #pragma once
 
-
+#include "v4l2_pixelformat_to_string.hpp"
 
 namespace cam
 {
@@ -29,15 +29,8 @@ namespace linux
         os << "    Type: " << format.type << "\n";
         os << "    Width: " << format.fmt.pix.width << "\n";
         os << "    Height: " << format.fmt.pix.height << "\n";
-
-        uint32_t pixelformat = format.fmt.pix.pixelformat;
-
-        char fourcc[] = {(char) (pixelformat & 0xff),
-                         (char) ((pixelformat >> 8) & 0xff),
-                         (char) ((pixelformat >> 16) & 0xff),
-                         (char) ((pixelformat >> 24) & 0xff)};
-
-        os << "    Codec: " << std::string(fourcc, 4) << "\n";
+        os << "    Codec: "
+           << v4l2_pixelformat_to_string(format.fmt.pix.pixelformat) << "\n";
     }
 }
 }

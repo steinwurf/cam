@@ -15,8 +15,8 @@
 #include <boost/bind.hpp>
 #include <boost/array.hpp>
 
-#include <nalu/nalu_type_from_header.hpp>
-#include <nalu/nalu_type_to_string.hpp>
+#include <nalu/type_from_header.hpp>
+#include <nalu/type_to_string.hpp>
 
 namespace ba = boost::asio;
 
@@ -299,7 +299,7 @@ private:
     {
         uint32_t byte_offset = 0;
         uint8_t nalu;
-        nalu::nalu_type nalu_type;
+        nalu::type nalu_type;
         {
             uint8_t byte = data[byte_offset];
 
@@ -308,15 +308,15 @@ private:
                 (get_bit(byte, 1) << 6) |
                 (get_bit(byte, 2) << 5);
 
-            nalu_type = nalu::nalu_type_from_header(
+            nalu_type = nalu::type_from_header(
                 (get_bit(byte, 3) << 4) |
                 (get_bit(byte, 4) << 3) |
                 (get_bit(byte, 5) << 2) |
                 (get_bit(byte, 6) << 1) |
                 (get_bit(byte, 7) << 0));
-            std::cout << nalu::nalu_type_to_string(nalu_type) << std::endl;
-            if (nalu_type == nalu::nalu_type::sequence_parameter_set ||
-                nalu_type == nalu::nalu_type::picture_parameter_set)
+            std::cout << nalu::type_to_string(nalu_type) << std::endl;
+            if (nalu_type == nalu::type::sequence_parameter_set ||
+                nalu_type == nalu::type::picture_parameter_set)
             {
                 result.push_back(0);
                 result.push_back(0);
@@ -336,7 +336,7 @@ private:
         {
             uint8_t byte = data[byte_offset];
             byte_offset += 1;
-            if (nalu_type == nalu::nalu_type::unspecified28)
+            if (nalu_type == nalu::type::unspecified28)
             {
                 start = get_bit(byte, 0);
                 end = get_bit(byte, 1);

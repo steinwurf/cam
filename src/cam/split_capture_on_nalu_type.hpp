@@ -33,8 +33,8 @@ namespace cam
 
         for (const auto& nalu : nalus)
         {
-            if (nalu.m_type == nalu::nalu_type::sequence_parameter_set ||
-                nalu.m_type == nalu::nalu_type::picture_parameter_set)
+            if (nalu.m_type == nalu::type::sequence_parameter_set ||
+                nalu.m_type == nalu::type::picture_parameter_set)
             {
                 if (aggregate)
                 {
