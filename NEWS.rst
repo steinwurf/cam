@@ -6,6 +6,10 @@ every change, see the Git log.
 
 Latest
 ------
+* tbd
+
+6.0.2
+-----
 * Patch: Status should infact be set to open after stopping stream.
   To check whether the streaming is stopped use ``!is_streaming()``.
 * Patch: Fixed valgrind warning about an uninitialized variable.
