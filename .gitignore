@@ -25,6 +25,7 @@ waf-*
 .lock-*
 build
 bundle_dependencies
+resolve_symlinks
 
 # Gnu Global tag files
 GPATH
