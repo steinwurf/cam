@@ -6,7 +6,7 @@ every change, see the Git log.
 
 Latest
 ------
-* tbd
+* Patch: Fix status not being set to closed after stopping stream.
 
 6.0.0
 -----

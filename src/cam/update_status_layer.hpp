@@ -55,7 +55,7 @@ namespace cam
 
             if (!error)
             {
-                Super::set_status_open();
+                Super::set_status_closed();
             }
         }
 
