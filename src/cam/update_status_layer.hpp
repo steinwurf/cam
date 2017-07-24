@@ -55,7 +55,9 @@ namespace cam
 
             if (!error)
             {
-                Super::set_status_closed();
+                // Set the status to open - not closed as we didn't close the
+                // streaming we just stopped it.
+                Super::set_status_open();
             }
         }
 

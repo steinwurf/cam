@@ -118,8 +118,6 @@ namespace linux
 
             m_bus_number = bus_number;
             m_dev_number = dev_number;
-
-
         }
 
         uint64_t bus_number() const
