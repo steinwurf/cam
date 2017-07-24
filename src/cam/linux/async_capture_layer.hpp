@@ -66,7 +66,7 @@ namespace linux
 
     private:
 
-        boost::asio::io_service* m_io;
+        boost::asio::io_service* m_io = nullptr;
         std::unique_ptr<boost::asio::posix::stream_descriptor> m_io_descriptor;
 
     };
