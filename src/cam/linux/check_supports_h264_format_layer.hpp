@@ -8,9 +8,6 @@
 #pragma once
 
 #include "../error.hpp"
-#include "../is_error_code_enum.hpp"
-#include "../error_category.hpp"
-#include "../make_error_code.hpp"
 
 namespace cam
 {

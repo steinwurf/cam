@@ -10,9 +10,6 @@
 #include "scoped_file_descriptor.hpp"
 
 #include "../error.hpp"
-#include "../is_error_code_enum.hpp"
-#include "../error_category.hpp"
-#include "../make_error_code.hpp"
 
 #include <fcntl.h>
 
