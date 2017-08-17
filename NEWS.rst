@@ -6,7 +6,8 @@ every change, see the Git log.
 
 Latest
 ------
-* tbd
+* Patch: Fix assert when opening none existing file. This should just return
+  an error.
 
 6.0.2
 -----
