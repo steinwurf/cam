@@ -8,6 +8,11 @@ Latest
 ------
 * tbd
 
+6.0.4
+-----
+* Patch: Make endian and gtest to internal dependencies, as they should have
+  been.
+
 6.0.3
 -----
 * Patch: Fix assert when opening none existing file. This should just return

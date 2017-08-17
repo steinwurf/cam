@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 APPNAME = 'cam'
-VERSION = '6.0.3'
+VERSION = '6.0.4'
 
 def configure(conf):
 
