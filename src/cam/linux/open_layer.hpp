@@ -34,11 +34,8 @@ namespace linux
 
             auto file_descriptor = ::open(device, O_RDWR);
 
-            std::cout << file_descriptor << std::endl;
-
             if (file_descriptor < 0)
             {
-                std::cout << "err" << std::endl;
                 error.assign(errno, std::generic_category());
                 return;
             }
