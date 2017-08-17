@@ -32,12 +32,18 @@ namespace linux
             assert(!error);
             assert(Super::is_status_closed());
 
-            m_file_descriptor = scoped_file_descriptor(::open(device, O_RDWR));
+            auto file_descriptor = ::open(device, O_RDWR);
 
-            if (!m_file_descriptor)
+            std::cout << file_descriptor << std::endl;
+
+            if (file_descriptor < 0)
             {
+                std::cout << "err" << std::endl;
                 error.assign(errno, std::generic_category());
+                return;
             }
+
+            m_file_descriptor = scoped_file_descriptor(file_descriptor);
         }
 
     protected:
