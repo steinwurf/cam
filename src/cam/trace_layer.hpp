@@ -20,182 +20,6 @@ namespace cam
     using trace_callback_function =
         std::function<void(const std::string& zone, const std::string& data)>;
 
-
-    using default_features = meta::typelist<>;
-
-
-    /// @copydoc layer::trace_callback_function
-    ///
-    /// Type trait helper allows compile time detection of whether a
-    /// codec contains a layer with the member function
-    /// layer::set_trace_callback(const trace_callback_function&)
-    ///
-    /// Example:
-    ///
-    /// using encoder_t kodo::full_rlnc8_encoder;
-    ///
-    /// if (kodo::has_set_trace_callback<encoder_t>::value)
-    /// {
-    ///     // Do something here
-    /// }
-    ///
-    template<typename T>
-    struct has_set_trace_callback
-    {
-    private:
-        using yes = std::true_type;
-        using no = std::false_type;
-
-        // Here we check that the layer has the
-        // layer::set_trace_callback(const trace_callback_function&) function.
-        template<typename U>
-        static auto test(int) ->
-            decltype(std::declval<U>().set_trace_callback(
-                         std::declval<trace_callback_function>()),
-                     yes());
-
-        template<typename> static no test(...);
-
-    public:
-
-        static const bool value =
-            std::is_same<decltype(test<T>(0)),yes>::value;
-    };
-
-    /// @ingroup type_traits trace
-    ///
-    /// Type trait helper allows compile time detection of whether a codec
-    /// contains a layer with the member function layer::set_trace_stdout()
-    ///
-    /// Example:
-    ///
-    /// using encoder_t kodo::full_rlnc8_encoder;
-    ///
-    /// if (kodo::has_set_trace_stdout<encoder_t>::value)
-    /// {
-    ///     // Do something here
-    /// }
-    ///
-    template<typename T>
-    struct has_set_trace_stdout
-    {
-    private:
-        using yes = std::true_type;
-        using no = std::false_type;
-
-        // Here we check that the layer has the layer::set_trace_stdout()
-        // function.
-        template<typename U>
-        static auto test(int) ->
-            decltype(std::declval<U>().set_trace_stdout(), yes());
-
-        template<typename> static no test(...);
-
-    public:
-
-        static const bool value =
-            std::is_same<decltype(test<T>(0)),yes>::value;
-    };
-
-    /// @ingroup type_traits trace
-    ///
-    /// Type trait helper allows compile time detection of whether a codec
-    /// contains a layer with the member function layer::set_trace_off()
-    ///
-    /// Example:
-    ///
-    /// using encoder_t kodo::full_rlnc8_encoder;
-    ///
-    /// if (kodo::has_set_trace_off<encoder_t>::value)
-    /// {
-    ///     // Do something here
-    /// }
-    ///
-    template<typename T>
-    struct has_set_trace_off
-    {
-    private:
-        using yes = std::true_type;
-        using no = std::false_type;
-
-        // Here we check that the layer has the layer::set_trace_off()
-        // function.
-        template<typename U>
-        static auto test(int) ->
-            decltype(std::declval<U>().set_trace_off(), yes());
-
-        template<typename> static no test(...);
-
-    public:
-
-        static const bool value =
-            std::is_same<decltype(test<T>(0)),yes>::value;
-    };
-
-    /// @ingroup generic_api trace
-    ///
-    /// This function calls the layer::set_trace_callback(Callback)
-    /// function used to produce a trace for the chosen codec.
-    template
-    <
-        class T,
-        class Callback,
-        typename std::enable_if<
-            has_set_trace_callback<T>::value, uint8_t>::type = 0
-    >
-    static void set_trace_callback(T& t, const Callback& callback)
-    {
-        t.set_trace_callback(callback);
-    }
-
-    /// @ingroup generic_api trace
-    ///
-    /// @copydoc set_trace_callback(const T&, const Callback&)
-    template
-    <
-        class T,
-        class Callback,
-        typename std::enable_if<
-            !has_set_trace_callback<T>::value, uint8_t>::type = 0
-    >
-    static void set_trace_callback(T& t, const Callback& callback)
-    {
-        (void) t;
-        (void) callback;
-
-        // We do the assert here - to make sure that this call is not
-        // silently ignored in cases where the stack does not have the
-        // set_trace_callback() function. However, this assert can
-        // be avoided by using the has_set_trace_callback.
-        assert(0);
-    }
-
-    /// Tag used to to enable tracing
-    struct enable_trace
-    { };
-
-    /// @ingroup trace
-    ///
-    /// @brief Very simple type trait to check whether a type is enable_trace
-    ///
-    template<class Feature>
-    using is_enable_trace = std::is_same<Feature, enable_trace>;
-
-    /// @todo This is a copy/paste from kodo. If it is useful we should
-    ///       make a sperate project for it
-    template<class Features>
-    using find_enable_trace =
-        typename Features::template find<is_enable_trace, meta::not_found>;
-
-    /// Fall-through case for the case where TraceTag is meta::not_found
-    template<class TraceTag, class SuperCoder>
-    class trace_layer : public SuperCoder
-    {
-        static_assert(std::is_same<TraceTag, meta::not_found>::value,
-                      "Unexpected TraceTag should be meta::not_found in the "
-                      "fall-through case.");
-    };
-
     /// @ingroup trace
     ///
     /// @brief When enabled the trace layer can be used to get human
@@ -243,7 +67,7 @@ namespace cam
     ///        the user to filter.
     ///
     template<class SuperCoder>
-    class trace_layer<enable_trace, SuperCoder> : public SuperCoder
+    class trace_layer : public SuperCoder
     {
     public:
 
@@ -273,8 +97,8 @@ namespace cam
             m_trace_callback = [](const std::string& zone,
                                   const std::string& data)
                 {
-                    std::cout << zone << ":" << std::endl;
-                    std::cout << data << std::endl;
+                    std::cout << zone << ": ";
+                    std::cout << data << "\n";
                 };
         }
 

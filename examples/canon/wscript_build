@@ -4,13 +4,13 @@
 bld.program(features='cxx',
             source='canon.cpp',
             target='canon',
-            use=['boost_includes', 'boost_system', 'cam_includes',
+            use=['boost_includes', 'boost_system', 'cam',
                  'boost_thread', 'nalu_includes', 'endian_includes',
                  'boost_program_options'])
 
 bld.program(features='cxx',
             source='rtp_to_file.cpp',
             target='rtp_to_file',
-            use=['boost_includes', 'boost_system', 'cam_includes',
+            use=['boost_includes', 'boost_system', 'cam',
                  'boost_thread', 'nalu_includes', 'endian_includes',
                  'boost_program_options'])

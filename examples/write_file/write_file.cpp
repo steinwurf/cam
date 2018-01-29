@@ -14,8 +14,8 @@
 #include <endian/big_endian.hpp>
 #include <nalu/to_annex_b_nalus.hpp>
 
-#include <cam/linux/linux.hpp>
-#include <cam/linux/camera.hpp>
+
+#include <cam/camera.hpp>
 #include <cam/linux/find_camera.hpp>
 #include <cam/split_capture_on_nalu_type.hpp>
 
@@ -51,10 +51,7 @@ void write_raw_capture(const char* device, const char* filename)
     std::cout << "Raw capture file: " << filename << std::endl;
     std::cout << "Device: " << device << std::endl;
 
-    using features = cam::default_features::
-        append<cam::enable_trace>;
-
-    cam::linux::camera<features> camera;
+    cam::camera camera;
     camera.try_open(device);
 
     std::cout << "Pixelformat: " << camera.pixelformat() << std::endl;
@@ -63,12 +60,20 @@ void write_raw_capture(const char* device, const char* filename)
     std::cout << "w = " << camera.width() << " "
               << "h = " << camera.height() << std::endl;
 
-    camera.try_request_i_frame_period(1000);
-    std::cout << "i_frame = " << camera.i_frame_period() << std::endl;
+    if (camera.has_h264_codec_control())
+    {
+        auto& control = camera.h264_codec_control();
+        control.try_request_i_frame_period(1000);
+        std::cout << "i_frame = " << control.i_frame_period() << std::endl;
+    }
 
     camera.try_start_streaming();
 
-    camera.try_request_bitrates(100000,100000);
+    if (camera.has_h264_codec_control())
+    {
+        auto& control = camera.h264_codec_control();
+        control.try_request_bitrates(100000,100000);
+    }
 
     uint32_t frames = 0;
     while(frames < 500)
@@ -146,20 +151,14 @@ void write_custom_capture(const char* device, const char* filename)
     std::cout << "Custom capture file: " << filename << std::endl;
     std::cout << "Device: " << device << std::endl;
 
-    using features = cam::default_features::
-        append<cam::enable_trace>;
-
-    using camera_type = cam::linux::camera<features>;
+    using camera_type = cam::linux::camera;
     camera_type camera;
 
-    if (cam::has_set_trace_callback<camera_type>::value)
-    {
-        cam::set_trace_callback(camera,
-            [](const std::string& zone, const std::string& msg)
-            {
-                std::cout << zone << ":\n" << msg << std::endl;
-            });
-    }
+    camera.set_trace_callback(
+        [](const std::string& zone, const std::string& msg)
+        {
+            std::cout << zone << ":\n" << msg << std::endl;
+        });
 
     camera.try_open(device);
 

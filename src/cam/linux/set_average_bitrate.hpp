@@ -20,50 +20,50 @@ namespace cam
 {
 namespace linux
 {
-    template<class Super>
-    class set_average_bitrate : public Super
+template<class Super>
+class set_average_bitrate : public Super
+{
+public:
+
+    void open(const char* device, std::error_code& error)
     {
-    public:
+        assert(device);
+        assert(!error);
 
-        void open(const char* device, std::error_code& error)
-        {
-            assert(device);
-            assert(!error);
+        Super::open(device, error);
 
-            Super::open(device, error);
+        if (error)
+            return;
 
-            if (error)
-                return;
+        memset(&m_bitrates, 0, sizeof(m_bitrates));
+        Super::query(0x0E, UVC_GET_CUR, (uint8_t*) &m_bitrates, error);
+    }
 
-            memset(&m_bitrates, 0, sizeof(m_bitrates));
-            Super::query(0x0E, UVC_GET_CUR, (uint8_t*) &m_bitrates, error);
-        }
+    void request_bitrates(uint32_t average_bitrate, uint32_t peak_bitrate,
+                          std::error_code& error)
+    {
+        assert(!error);
+        assert(Super::is_status_open() || Super::is_status_streaming());
 
-        void request_bitrates(uint32_t average_bitrate, uint32_t peak_bitrate,
-                              std::error_code& error)
-        {
-            assert(!error);
-            assert(Super::is_status_open() || Super::is_status_streaming());
+        m_bitrates.m_peak_bitrate = peak_bitrate;
+        m_bitrates.m_average_bitrate = average_bitrate;
 
-            m_bitrates.m_peak_bitrate = peak_bitrate;
-            m_bitrates.m_average_bitrate = average_bitrate;
+        Super::query(0x0E, UVC_SET_CUR, (uint8_t*) &m_bitrates, error);
+    }
 
-            Super::query(0x0E, UVC_SET_CUR, (uint8_t*) &m_bitrates, error);
-        }
+    uint32_t average_bitrate() const
+    {
+        return m_bitrates.m_average_bitrate;
+    }
 
-        uint32_t average_bitrate() const
-        {
-            return m_bitrates.m_average_bitrate;
-        }
+    uint32_t peak_bitrate() const
+    {
+        return m_bitrates.m_peak_bitrate;
+    }
 
-        uint32_t peak_bitrate() const
-        {
-            return m_bitrates.m_peak_bitrate;
-        }
+private:
 
-    private:
-
-        uvcx_bitrate m_bitrates;
-    };
+    uvcx_bitrate m_bitrates;
+};
 }
 }

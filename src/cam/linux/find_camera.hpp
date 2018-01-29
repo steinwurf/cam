@@ -11,6 +11,8 @@
 #include <cassert>
 #include <fstream>
 
+#include "camera.hpp"
+
 namespace cam
 {
 namespace linux
@@ -34,7 +36,7 @@ namespace linux
                 continue;
 
             // check if camera has h264 capablities
-            cam::linux::camera<cam::default_features> cc;
+            camera cc;
 
             std::error_code error;
             cc.open(camera_file.c_str(), error);
