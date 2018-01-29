@@ -42,5 +42,13 @@
         "method": "semver",
         "major": 4,
         "sources": ["github.com/steinwurf/endian.git"]
+    },
+    {
+        "name": "platform",
+        "internal": true,
+        "resolver": "git",
+        "method": "semver",
+        "major": 3,
+        "sources": ["github.com/steinwurf/platform.git"]
     }
 ]

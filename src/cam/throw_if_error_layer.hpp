@@ -41,23 +41,6 @@ namespace cam
 
         }
 
-        void try_request_i_frame_period(uint32_t i_frame_period)
-        {
-            std::error_code error;
-            Super::request_i_frame_period(i_frame_period, error);
-
-            throw_if_error(error);
-        }
-
-        void try_request_bitrates(uint32_t average_bitrate,
-                                  uint32_t peak_bitrate)
-        {
-            std::error_code error;
-            Super::request_bitrates(average_bitrate, peak_bitrate, error);
-
-            throw_if_error(error);
-        }
-
         void try_start_streaming()
         {
             std::error_code error;

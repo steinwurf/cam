@@ -5,15 +5,16 @@
 // The copyright notice above does not evidence any
 // actual or intended publication of such source code.
 
-#include <cam/linux/camera.hpp>
+#include <cam/camera.hpp>
 
 int main()
 {
     try
     {
-        cam::linux::camera<cam::default_features> s;
+        cam::camera s;
+        s.set_trace_stdout();
 
-        s.try_open("/dev/video0");
+        s.try_open("/dev/video2");
 
         std::cout << "w = " << s.width() << " "
                   << "h = " << s.height() << std::endl;

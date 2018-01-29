@@ -41,14 +41,16 @@ def build(bld):
         'DEFINES_STEINWURF_VERSION',
         'STEINWURF_CAM_VERSION="{}"'.format(VERSION))
 
-    bld(export_includes=['src'],
-        name='cam_includes',
-        use=[
-            'meta_includes',
-            'boost_system',
-            'nalu_includes',
-            'UDEV',
-            'USB-1.0'])
+    bld.stlib(features='cxx',
+              source=bld.path.ant_glob('src/**/*.cpp'),
+              target='cam',
+              use=['meta_includes',
+              'boost_system',
+              'nalu_includes',
+              'platform_includes',
+              'UDEV',
+              'USB-1.0'],
+              export_includes=['src'])
 
     if bld.is_toplevel():
 

@@ -11,17 +11,8 @@ namespace cam
 {
 namespace linux
 {
-    /// Fall-through case for the case where TraceTag is meta::not_found
-    template<class TraceTag, class Super>
-    class trace_buffer_queue_layer : public Super
-    {
-        static_assert(std::is_same<TraceTag, meta::not_found>::value,
-                      "Unexpected TraceTag should be meta::not_found in the "
-                      "fall-through case.");
-    };
-
     template<class Super>
-    class trace_buffer_queue_layer<enable_trace, Super> : public Super
+    class trace_buffer_queue_layer : public Super
     {
     public:
 
