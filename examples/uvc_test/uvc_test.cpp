@@ -7,17 +7,24 @@
 
 #include <cam/camera.hpp>
 
-int main()
+int main(int argc, char* argv[])
 {
+    if (argc != 2 || std::string(argv[1]) == "--help")
+    {
+        auto usage = "./uvc_test DEVICE";
+        std::cout << usage << std::endl;
+        return 0;
+    }
+    auto device = std::string(argv[1]);
     try
     {
-        cam::camera s;
-        s.set_trace_stdout();
+        cam::camera c;
+        c.set_trace_stdout();
 
-        s.try_open("/dev/video2");
+        c.try_open(device);
 
-        std::cout << "w = " << s.width() << " "
-                  << "h = " << s.height() << std::endl;
+        std::cout << "w = " << c.width() << " "
+                  << "h = " << c.height() << std::endl;
     }
     catch (std::exception& e)
     {

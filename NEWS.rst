@@ -6,7 +6,13 @@ every change, see the Git log.
 
 Latest
 ------
-* tbd
+* Major: Changed ``open(const char* device...`` to
+  ``open(const std::string&``.
+* Major: Redesigned API to now use the impl pattern.
+* Major: Redesigned API to know handle devices without
+  ``xu_h264_codec_control``.
+* Major: Renamed ``cam_includes`` to ``cam`` since the project is now a
+  library.
 
 6.0.4
 -----
