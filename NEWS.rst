@@ -6,6 +6,10 @@ every change, see the Git log.
 
 Latest
 ------
+* tbd
+
+7.0.0
+-----
 * Major: Changed ``open(const char* device...`` to
   ``open(const std::string&``.
 * Major: Redesigned API to now use the impl pattern.
