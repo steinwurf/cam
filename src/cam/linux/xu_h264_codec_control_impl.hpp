@@ -43,9 +43,9 @@ public:
         m_camera(camera), m_unit_id(unit_id)
     { }
 
-    void open(const char* device, std::error_code& error)
+    void open(const std::string& device, std::error_code& error)
     {
-        assert(device);
+        assert(!device.empty());
         assert(!error);
 
         memset(&m_config, 0, sizeof(m_config));

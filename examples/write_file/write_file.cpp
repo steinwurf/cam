@@ -43,7 +43,7 @@ void write_to_file(std::fstream& file, const uint8_t* data, uint32_t size)
 ///
 ///    cvlc raw_capture.h264 --demux h264
 ///
-void write_raw_capture(const char* device, const char* filename)
+void write_raw_capture(const std::string& device, const std::string& filename)
 {
     std::fstream capture_file(filename, std::ios::out |
                               std::ios::binary | std::ios::trunc);
@@ -143,7 +143,8 @@ void write_raw_capture(const char* device, const char* filename)
 ///
 /// All multi-byte fields are written in Big Endian format.
 ///
-void write_custom_capture(const char* device, const char* filename)
+void write_custom_capture(
+    const std::string& device, const std::string& filename)
 {
     std::fstream capture_file(filename, std::ios::out |
                               std::ios::binary | std::ios::trunc);

@@ -33,13 +33,13 @@ camera::camera() :
 camera::~camera()
 { }
 
-void camera::try_open(const char* device)
+void camera::try_open(const std::string& device)
 {
     assert(m_impl);
     m_impl->try_open(device);
 }
 
-void camera::open(const char* device, std::error_code& error)
+void camera::open(const std::string& device, std::error_code& error)
 {
     assert(m_impl);
     m_impl->open(device, error);

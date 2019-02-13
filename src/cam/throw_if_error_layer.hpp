@@ -19,9 +19,9 @@ namespace cam
     {
     public:
 
-        void try_open(const char* device)
+        void try_open(const std::string& device)
         {
-            assert(device);
+            assert(!device.empty());
 
             std::error_code error;
             Super::open(device, error);

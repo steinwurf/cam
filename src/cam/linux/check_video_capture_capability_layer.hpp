@@ -21,7 +21,7 @@ namespace linux
     {
     public:
 
-        void open(const char* device, std::error_code& error)
+        void open(const std::string& device, std::error_code& error)
         {
             Super::open(device, error);
 

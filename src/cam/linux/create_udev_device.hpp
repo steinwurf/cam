@@ -37,6 +37,11 @@ namespace linux
 
             void operator()(udev_device* dev)
             {
+                // Note: Even after calling udev_device_unref valgrind will
+                // report that some memory is still reachable.
+                // this might change with future versions of libudev.
+                // To check if this is still an issue, simply open a device
+                // and monitor the process with valgrind.
                 assert(dev);
                 auto ok = udev_device_unref(dev);
                 assert(ok == nullptr);
@@ -46,9 +51,9 @@ namespace linux
 
     public:
 
-        void open(const char* device, std::error_code& error)
+        void open(const std::string& device, std::error_code& error)
         {
-            assert(device);
+            assert(!device.empty());
             assert(!error);
 
             Super::open(device, error);
@@ -67,7 +72,7 @@ namespace linux
             // Get the device number
             struct stat stat_buffer;
 
-            if (stat(device, &stat_buffer) != 0)
+            if (stat(device.c_str(), &stat_buffer) != 0)
             {
                 assert(0); // <--- replace with error
                 return;
@@ -90,7 +95,7 @@ namespace linux
 
             if (!udev_device_ptr)
             {
-                assert(0);
+                assert(0); // <--- replace with error
                 return;
             }
 
@@ -102,7 +107,7 @@ namespace linux
 
             if (parent == nullptr)
             {
-                assert(0);
+                assert(0); // <--- replace with error
                 return;
             }
 
@@ -139,8 +144,7 @@ namespace linux
             assert(device != nullptr);
             assert(name != nullptr);
 
-            const char* value = udev_device_get_sysattr_value(
-                device, name);
+            auto value = udev_device_get_sysattr_value(device, name);
 
             if (value == nullptr)
             {

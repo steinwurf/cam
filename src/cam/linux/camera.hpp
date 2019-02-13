@@ -51,10 +51,6 @@ namespace linux
     using camera =
         throw_if_error_layer<
         update_status_layer<
-        //trace_set_average_bitrate<
-        //set_average_bitrate<
-        //trace_xu_config_query<
-        //xu_config_query<
         trace_create_usb_device<
         create_usb_device<
         create_udev_device<
@@ -83,6 +79,6 @@ namespace linux
         open_layer<
         trace_layer<
         status_layer<
-        final_layer>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>;//>>>>;
+        final_layer>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>;
 }
 }

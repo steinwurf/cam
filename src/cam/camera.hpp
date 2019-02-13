@@ -29,8 +29,8 @@ struct camera
     /// Destructor (see constructor why definition of destructor is needed)
     ~camera();
 
-    void try_open(const char* device);
-    void open(const char* device, std::error_code& error);
+    void try_open(const std::string& device);
+    void open(const std::string& device, std::error_code& error);
 
     void try_request_resolution(uint32_t width, uint32_t height);
     void request_resolution(uint32_t width, uint32_t height,

@@ -20,10 +20,10 @@ namespace linux
     class trace_create_usb_device : public Super
     {
     public:
-        
-        void open(const char* device, std::error_code& error)
+
+        void open(const std::string& device, std::error_code& error)
         {
-            assert(device);
+            assert(!device.empty());
             assert(!error);
 
             Super::open(device, error);

@@ -203,9 +203,9 @@ private:
 
 public:
 
-    void open(const char* device, std::error_code& error)
+    void open(const std::string& device, std::error_code& error)
     {
-        assert(device);
+        assert(!device.empty());
         assert(!error);
 
         Super::open(device, error);
@@ -259,8 +259,7 @@ public:
 
         libusb_device_descriptor descriptor;
 
-        if (libusb_get_device_descriptor(
-            usb_device.get(), &descriptor) != 0)
+        if (libusb_get_device_descriptor(usb_device.get(), &descriptor) != 0)
         {
             assert(0);
             return;
@@ -293,8 +292,6 @@ public:
                     if (interface->bInterfaceSubClass !=
                             (int)usb_subclass_code::video_control)
                         continue;
-
-
 
                     const uint8_t* ptr = interface->extra;
 
