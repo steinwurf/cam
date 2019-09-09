@@ -18,7 +18,7 @@
         "resolver": "git",
         "method": "semver",
         "major": 4,
-        "sources": ["gitlab.com/steinwurf/nalu.git"]
+        "sources": ["github.com/steinwurf/nalu.git"]
     },
     {
         "name": "gtest",
