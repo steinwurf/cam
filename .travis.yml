@@ -16,7 +16,7 @@ matrix:
       env:
         - CXX=clang++
 before_install:
-  - sudo apt-get install -y libudev-dev
+  - sudo apt-get install -y libv4l-dev libudev-dev libusb-1.0-0-dev
 install:
   - python waf configure
 script:
