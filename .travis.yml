@@ -1,0 +1,21 @@
+language: bash
+matrix:
+  include:
+    - name: Linux Ubuntu 16 - g++ 5
+      os: linux
+      dist: xenial
+      compiler: gcc
+    - name: Linux Ubuntu 18 - g++ 7
+      os: linux
+      dist: bionic
+      compiler: gcc
+    - name: Linux Ubuntu 18 - clang 7
+      os: linux
+      dist: bionic
+      compiler: clang
+      env:
+        - CXX=clang++
+install:
+  - python waf configure
+script:
+  - python waf build -v --run_tests
