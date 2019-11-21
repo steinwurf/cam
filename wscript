@@ -46,6 +46,7 @@ def build(bld):
               target='cam',
               use=['meta_includes',
               'boost_system',
+              'boost_asio_includes',
               'nalu_includes',
               'platform_includes',
               'UDEV',

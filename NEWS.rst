@@ -6,7 +6,7 @@ every change, see the Git log.
 
 Latest
 ------
-* tbd
+* Major: Upgrade to boost version 4.
 
 7.0.0
 -----

@@ -10,7 +10,7 @@
         "name": "boost",
         "resolver": "git",
         "method": "semver",
-        "major": 3,
+        "major": 4,
         "sources": ["github.com/steinwurf/boost.git"]
     },
     {
@@ -40,7 +40,7 @@
         "internal": true,
         "resolver": "git",
         "method": "semver",
-        "major": 4,
+        "major": 10,
         "sources": ["github.com/steinwurf/endian.git"]
     },
     {

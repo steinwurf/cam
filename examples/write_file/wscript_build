@@ -4,5 +4,4 @@
 bld.program(features='cxx',
             source='write_file.cpp',
             target='write_file',
-            use=['cam', 'endian_includes',
-                 'nalu_includes'])
+            use=['cam', 'endian_includes'])
