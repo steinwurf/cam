@@ -1,0 +1,23 @@
+language: cpp
+matrix:
+  include:
+    - name: Linux Ubuntu 16 - g++ 5
+      os: linux
+      dist: xenial
+      compiler: gcc
+    - name: Linux Ubuntu 18 - g++ 7
+      os: linux
+      dist: bionic
+      compiler: gcc
+    - name: Linux Ubuntu 18 - clang 7
+      os: linux
+      dist: bionic
+      compiler: clang
+      env:
+        - CXX=clang++
+before_install:
+  - sudo apt-get install -y libv4l-dev libudev-dev libusb-1.0-0-dev
+install:
+  - python waf configure
+script:
+  - python waf build -v --run_tests

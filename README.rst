@@ -2,6 +2,9 @@
 cam
 ===
 
+.. image:: https://travis-ci.org/steinwurf/cam.svg?branch=master
+    :target: https://travis-ci.org/steinwurf/cam
+
 The purpose of this library is to make it easy to work with USB webcams.
 
 .. contents:: Table of Contents:
